@@ -1,3 +1,10 @@
+# Connect 4: AI Showdown 🎯
+
+🚀 **Want to try it out?**  
+Play the game live here 👉 [https://inspiring-fox-28c024.netlify.app](https://inspiring-fox-28c024.netlify.app)
+
+---
+
 🧠 **Connect 4: AI Showdown** — Full Feature Summary
 
 ---
