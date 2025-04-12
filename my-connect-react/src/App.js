@@ -1,138 +1,140 @@
+// Updated App.js with game mode selection and AI difficulty
+import React, { useState, useEffect } from 'react';
 import './App.css';
-import React, { Component } from 'react';
-
-class App extends Component {
-    state = {
-        rows: 6,
-        columns: 7, 
-        moves: [],
-        playerTurn: 'red',
-    };
-
-//function to reset board and reset winner sign
-    resetBoard= ()=>{
-        this.setState({moves:[], winner: null });
-    }
-
-//function to get pieces
-    getPiece = (x,y) =>{
-
-        const list = this.state.moves.filter((item)=> {
-            return (item.x === x && item.y===y);
-        });
-        return list[0];
-    }
-//function to check winning moves horizontal, vertical & diagonally 
-    getWinningMovesForVelocity = (xPosition, yPosition, xVelocity, yVelocity)=>{
-        const winningMoves = [{x: xPosition, y: yPosition}];
-        const player = this.getPiece(xPosition,yPosition).player;
-
-        for (let delta = 1; delta <= 3; delta+=1){
-            const checkX = xPosition + xVelocity * delta;
-            const checkY = yPosition + yVelocity * delta; 
-
-            const checkPiece = this.getPiece(checkX, checkY);
-            if(checkPiece && checkPiece.player === player ){
-                winningMoves.push({x: checkX, y: checkY})
-            } else{
-                break;
-            }
-        } 
-        for (let delta = -1; delta >= -3; delta -=1){
-            const checkX = xPosition + xVelocity * delta;
-            const checkY = yPosition + yVelocity * delta; 
-
-            const checkPiece = this.getPiece(checkX, checkY);
-            if(checkPiece && checkPiece.player === player ){
-                winningMoves.push({x: checkX, y: checkY})
-            } else{
-                break;
-            }
-        }
-        
-        return winningMoves;
-    }
-
-    checkForWin = (x, y) =>{
-       const velocities = [{x:1, y: 0}, {x: 0, y: 1}, {x: -1, y: 1}, {x: 1, y: 1 }]
-       for (let dex= 0; dex< velocities.length; dex++){
-           const element = velocities[dex];
-          const winningMoves = this.getWinningMovesForVelocity(x, y, element.x, element.y);
-         if (winningMoves.length>3){
-             this.setState({winner: this.getPiece(x, y).player, winningMoves});
-         }
-       }
-    }
-
-//function to add a new move, add move to that state then change to next player, ie red yellow red yellow etc 
-   addMove=(x,y) => {
-       const {playerTurn}=this.state;
-       const nextPlayerTurn= playerTurn==='red' ? 'yellow' : 'red';
-       let  availableYPosition = null; //allowing pieces to drop down 
-       for (let position = this.state.rows -1; position >= 0; position--){
-          if(!this.getPiece(x, position)){
-              availableYPosition= position;
-              break;
-          }
-       }
-       if (availableYPosition !== null){
-           //checking for win
-        this.setState({ moves:this.state.moves.concat({x, y: availableYPosition , player : playerTurn}), playerTurn: nextPlayerTurn}, () => this.checkForWin(x, availableYPosition, playerTurn));
-       }
-   }
+import Confetti from 'react-confetti';
+import { useWindowSize } from '@react-hook/window-size';
+import GameMenu from './components/GameMenu';
+import WinnerBanner from './components/WinnerBanner';
+import Board from './components/Board';
+import { checkWinner, findAvailableRow } from './utils/gameLogic';
+import { makeAIMoveEasy, makeAIMoveMedium, makeAIMoveHard, makeAIMoveImpossible} from './hooks/useAI';
 
 
-  renderBoard(){
-      const {rows,columns, winner}= this.state;
-      const rowViews= [];
-//creating my game board for loop for rows and columns also saying onclick add move to place the red or yellow tiles
-      for (let row=0; row<this.state.rows;row+=1){
-         const columnViews= []; 
-        for (let column=0; column<this.state.columns;column+=1){
-            const piece= this.getPiece(column,row);
-            columnViews.push(
-                <div onClick={()=>{this.addMove(column, row)}} style={{width:'7vw',height:'7vw',backgroundColor:'#00a8ff',display:'flex', padding: 5, cursor:'pointer'}}>
-                  <div style={{ borderRadius: '50%',backgroundColor: 'white', flex: 1, display: 'flex'}}>
-                    {piece ? <div style={{backgroundColor: piece.player,flex: 1,borderRadius:'50%', border: '1px solid #333'}}/> : undefined}  
-                  </div>  
-                </div>
-            );
-        }
-        rowViews.push(
-            <div style={{display: 'flex',flexDirection:'row'}}>{columnViews}</div>
-        );
-      }
-      return( 
-        <div style={{backgroundColor: 'red', display: 'flex', flexDirection:'column'}}>
-        {winner && <div onClick={this.resetBoard} style={{ position: 'absolute', left:0, right: 0, bottom: 0, top: 0, zIndex: 3, backgroundColor: 'rgba(0, 0, 0, .5)' , display: 'flex', 
-        justifyContent: 'center', alignItems:'center', color: '#fff', fontWeight: '200', fontSize: '7vw' }}>{ 'Winner!!'}</div> }
-        {rowViews}
+const NUM_ROWS = 6;
+const NUM_COLS = 7;
 
-        </div>
-      );
+function App() {
+  const [board, setBoard] = useState(createBoard());
+  const [currentPlayer, setCurrentPlayer] = useState(1);
+  const [winner, setWinner] = useState(null);
+  const [gameMode, setGameMode] = useState(null); // 'HUMAN' or 'AI'
+  const [aiDifficulty, setAIDifficulty] = useState('easy');
+  const [width, height] = useWindowSize();
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [recycleConfetti, setRecycleConfetti] = useState(true);
+  const [lastAIMove, setLastAIMove] = useState(null); // { row, col }
 
+
+  function createBoard() {
+    return Array(NUM_ROWS).fill(null).map(() => Array(NUM_COLS).fill(null));
   }
 
-    render() {
-        const {style}=this.props;
-        return (
-            <div style={style?Object.assign({},styles.container,style): styles.container}>
-            <div>
-                {this.renderBoard()}
-                <button onClick = {this.resetBoard}>Clear Board</button>
-            </div>
-            </div>
-        );
+  const handleClick = (col) => {
+    if (winner || board[0][col] !== null) return;
+
+    const row = findAvailableRow(board, col);
+    if (row === -1) return;
+
+    const newBoard = board.map(row => [...row]);
+    newBoard[row][col] = currentPlayer;
+    setBoard(newBoard);
+
+    const newWinner = checkWinner(newBoard);
+    if (newWinner) {
+      setWinner(newWinner);
+      setShowConfetti(true);
+      setRecycleConfetti(true);
+    } else {
+      setCurrentPlayer(prev => prev === 1 ? 2 : 1);
     }
+    if (gameMode === 'AI' && currentPlayer === 1) {
+        setLastAIMove(null); // remove AI highlight once player moves
+      }      
+  };
+
+  const makeAIMove = () => {
+    if (aiDifficulty === 'impossible') {
+        makeAIMoveImpossible(board, (col) => {
+            const row = findAvailableRow(board, col);
+            setLastAIMove({ row, col });
+            handleClick(col);
+              });
+    } else if (aiDifficulty === 'hard') {
+        makeAIMoveHard(board, (col) => {
+        const row = findAvailableRow(board, col);
+        setLastAIMove({ row, col });
+        handleClick(col);
+    });
+    } else if (aiDifficulty === 'medium') {
+        makeAIMoveMedium(board, (col) => {
+        const row = findAvailableRow(board, col);
+        setLastAIMove({ row, col });
+        handleClick(col);
+    });
+    } else {
+        makeAIMoveEasy(board, (col) => {
+        const row = findAvailableRow(board, col);
+        setLastAIMove({ row, col });
+        handleClick(col);
+    });
+    }
+  };
+
+  useEffect(() => {
+    if (gameMode === 'AI' && currentPlayer === 2 && !winner) {
+      const aiTimeout = setTimeout(() => {
+        makeAIMove();
+      }, 500);
+      return () => clearTimeout(aiTimeout);
+    }
+  }, [board, currentPlayer, winner, gameMode, aiDifficulty, makeAIMove]);
+
+  useEffect(() => {
+    if (showConfetti) {
+      const stopRecycling = setTimeout(() => {
+        setRecycleConfetti(false);
+      }, 5000);
+      return () => clearTimeout(stopRecycling);
+    }
+  }, [showConfetti]);
+
+  const resetGame = () => {
+    setBoard(createBoard());
+    setCurrentPlayer(1);
+    setWinner(null);
+    setGameMode(null);
+    setShowConfetti(false);
+    setRecycleConfetti(true);
+    setLastAIMove(false);
+  };
+
+  if (!gameMode) {
+    return <GameMenu setGameMode={setGameMode} setAIDifficulty={setAIDifficulty} />;
+  }
+
+  return (
+    <>
+      {showConfetti && (
+        <Confetti width={width} height={height} recycle={recycleConfetti} />
+      )}
+      <div className="App">
+        <h1>Connect 4</h1>
+        {winner ? (
+          <WinnerBanner winner={winner} />
+        ) : (
+          <p className="turn-indicator">Current Turn: {currentPlayer === 1 ? 'Player 1' : (gameMode === 'AI' ? `${aiDifficulty.charAt(0).toUpperCase() + aiDifficulty.slice(1)} AI` : 'Player 2')}</p>
+        )}
+        <Board
+          board={board}
+          handleClick={handleClick}
+          gameMode={gameMode}
+          currentPlayer={currentPlayer}
+          lastAIMove={lastAIMove}
+        />
+        <button className="reset-button" onClick={resetGame}>Restart</button>
+      </div>
+    </>
+  );
 }
-const styles={
-    container:{
-        height: '100%',
-        padding : 5,
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center'
-    }
-};
 
 export default App;
