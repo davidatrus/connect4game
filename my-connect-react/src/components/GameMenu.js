@@ -1,10 +1,20 @@
 // GameMenu.js — fixed to wait for difficulty before starting
-import React, { useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
+import { socket } from '../socket'; 
 
 const GameMenu = ({ setGameMode, setAIDifficulty }) => {
   const [isAISelected, setIsAISelected] = useState(false);
   const [selectedDifficulty, setSelectedDifficulty] = useState('easy');
   const [factIndex, setFactIndex] = useState(0);
+  const [isHumanModeChosen, setIsHumanModeChosen] = useState(false);
+  const [isOnlineModeChosen, setIsOnlineModeChosen] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [isOnline, setIsOnline] = useState(false);
+  const [onlineStep, setOnlineStep] = useState('name'); // 'name', 'select', 'host', 'join'
+  const [gameCode, setGameCode] = useState('');
+  const [gameCodeInput, setGameCodeInput] = useState('');
+
+
   const facts = [
     "Connect 4 is a solved game — the first player can always win with perfect play.",
     "The game was first solved by James Dow Allen on October 1, 1988",
@@ -31,18 +41,43 @@ const GameMenu = ({ setGameMode, setAIDifficulty }) => {
     "If this app breaks, just pretend it's a feature"
   ];
   const funFact = facts[factIndex];
+
   useEffect(() => {
     const interval = setInterval(() => {
       setFactIndex((prev) => (prev + 1) % facts.length);
     }, 4000);
     return () => clearInterval(interval);
-  }, []);
+  }, [facts.length]);
 
   const handleDifficultyChange = (e) => {
     const difficulty = e.target.value;
     setSelectedDifficulty(difficulty);
     setAIDifficulty(difficulty);
   };
+  const handleOnlineSelect = (hostMode) => {
+    if (hostMode) {
+      const code = generateGameCode();
+      setGameCode(code);
+      setOnlineStep('host');  // New view for host
+    } else {
+      setOnlineStep('join');  // New view for join
+    }
+  };
+  const generateGameCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  };
+  const startOnlineGame = ({ isHost, code }) => {
+    console.log(`${isHost ? 'Hosting' : 'Joining'} game with code: ${code} and name: ${displayName}`);
+    // 🔌 Emit event to server
+  socket.emit(isHost ? 'createRoom' : 'joinRoom', {
+    roomCode: code,
+    name: displayName,
+  });
+
+  setGameMode('ONLINE');
+  };
+  
 
   const handleStartAIGame = () => {
     setAIDifficulty(selectedDifficulty);
@@ -51,35 +86,118 @@ const GameMenu = ({ setGameMode, setAIDifficulty }) => {
 
   return (
     <div className="menu-container">
-  <div className="menu-card">
-  <div className="icon-row">
-  <span role="img" aria-label="Red" className="token">🔴</span>
-  <span role="img" aria-label="Yellow" className="token">🟡</span>
-</div>
-    <h2 className="slide-title">Connect 4</h2>
-    <p className="tagline"><em>Challenge a friend or face the smartest AI</em></p>
-    <p className="tagline">Select a mode to start playing</p>
-    <button onClick={() => setGameMode('HUMAN')}>Play vs Human</button>
-    <button onClick={() => setIsAISelected(true)}>Play vs Computer</button>
-    {isAISelected && (
-      <div className="difficulty-select">
-        <label htmlFor="difficulty">AI Difficulty:</label>
-        <select id="difficulty" onChange={handleDifficultyChange} value={selectedDifficulty}>
-          <option value="easy">Easy</option>
-          <option value="medium">Medium</option>
-          <option value="hard">Hard</option>
-          <option value="impossible">Impossible</option>
-        </select>
-        <br />
-        <button onClick={handleStartAIGame}>Start Game</button>
-      </div>
-        
+      <div className="menu-card">
+        <div className="icon-row">
+          <span role="img" aria-label="Red" className="token">🔴</span>
+          <span role="img" aria-label="Yellow" className="token">🟡</span>
+        </div>
+        <h2 className="slide-title">Connect 4</h2>
+        <p className="tagline"><em>Challenge a friend or face the smartest AI</em></p>
+        <p className="tagline">Select a mode to start playing</p>
+        {/* Primary Buttons — if nothing selected yet */}
+        {!isHumanModeChosen && !isOnlineModeChosen && !isAISelected && (
+          <>
+            <button onClick={() => setIsHumanModeChosen(true)}>Play vs Human</button>
+            <button onClick={() => setIsAISelected(true)}>Play vs Computer</button>
+          </>
+        )}
+
+        {/* If Human mode is chosen, offer Local vs Online */}
+        {isHumanModeChosen && !isOnlineModeChosen && (
+          <>
+            <button onClick={() => setGameMode('HUMAN')}>Play Locally</button>
+            <button onClick={() => {
+              setIsOnlineModeChosen(true);
+              setOnlineStep('name');
+            }}>Play Online</button>
+          </>
+        )}
+
+        {/* If Online is selected, prompt for display name + host/join */}
+        {/* If Online is selected, step through: name → host/join */}
+{isOnlineModeChosen && (
+  <>
+    {onlineStep === 'name' && (
+      <>
+        <input
+          type="text"
+          placeholder="Enter Display Name"
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+          className="input-display-name"
+        />
+        <button
+          onClick={() => {
+            if (displayName.trim()) {
+              setOnlineStep('hostjoin');
+            }
+          }}
+        >
+          Continue
+        </button>
+      </>
     )}
-  </div>
-  <div className="fact-card" key={factIndex}>
+
+    {onlineStep === 'hostjoin' && (
+      <div className="button-row">
+        <button onClick={() => handleOnlineSelect(true)}>Host Game</button>
+        <button onClick={() => handleOnlineSelect(false)}>Join Game</button>
+      </div>
+    )}
+    {onlineStep === 'host' && (
+  <>
+    <p className="game-code-display">🎉 Share this code with a friend:</p>
+    <h3 className="game-code">{gameCode}</h3>
+    <button onClick={() => startOnlineGame({ isHost: true, code: gameCode })}>Start Game</button>
+  </>
+)}
+
+{onlineStep === 'join' && (
+  <>
+    <input
+      type="text"
+      placeholder="Enter Game Code"
+      value={gameCodeInput}
+      onChange={(e) => setGameCodeInput(e.target.value.toUpperCase())}
+      className="input-game-code"
+      maxLength={6}
+    />
+    <button
+      onClick={() => {
+        if (gameCodeInput.trim().length === 6) {
+          startOnlineGame({ isHost: false, code: gameCodeInput });
+        } else {
+          alert('Please enter a valid 6-character game code.');
+        }
+      }}
+    >
+      Join Game
+    </button>
+  </>
+)}
+  </>
+)}
+
+        {/* AI Difficulty Flow — remains the same */}
+        {isAISelected && (
+          <div className="difficulty-select">
+            <label htmlFor="difficulty">AI Difficulty:</label>
+            <select id="difficulty" onChange={handleDifficultyChange} value={selectedDifficulty}>
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+              <option value="impossible">Impossible</option>
+            </select>
+            <br />
+            <button onClick={handleStartAIGame}>Start Game</button>
+          </div>
+        )}
+
+      </div>
+      <div className="fact-card" key={factIndex}>
         <p> {funFact} </p>
       </div>
-</div>
+    </div>
   );
 };
 

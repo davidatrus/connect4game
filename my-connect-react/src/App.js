@@ -8,6 +8,9 @@ import WinnerBanner from './components/WinnerBanner';
 import Board from './components/Board';
 import { checkWinner, findAvailableRow } from './utils/gameLogic';
 import { makeAIMoveEasy, makeAIMoveMedium, makeAIMoveHard, makeAIMoveImpossible} from './hooks/useAI';
+import { socket } from './socket';
+
+
 
 
 const NUM_ROWS = 6;
@@ -23,6 +26,10 @@ function App() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [recycleConfetti, setRecycleConfetti] = useState(true);
   const [lastAIMove, setLastAIMove] = useState(null); // { row, col }
+  const [isOnline, setIsOnline] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [gameCode, setGameCode] = useState('');
+  const [isHost, setIsHost] = useState(false);
 
 
   function createBoard() {
@@ -97,6 +104,22 @@ function App() {
       return () => clearTimeout(stopRecycling);
     }
   }, [showConfetti]);
+  // Socket listener setup
+useEffect(() => {
+  socket.on('roomUpdate', (data) => {
+    console.log('🟢 Room update:', data.message);
+  });
+
+  socket.on('errorMessage', (msg) => {
+    alert(`⚠️ ${msg}`);
+  });
+
+  return () => {
+    socket.off('roomUpdate');
+    socket.off('errorMessage');
+  };
+}, []);
+
 
   const resetGame = () => {
     setBoard(createBoard());
