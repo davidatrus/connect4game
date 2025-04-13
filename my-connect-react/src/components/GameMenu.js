@@ -2,16 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { socket } from '../socket'; 
 
-const GameMenu = ({ setGameMode, setAIDifficulty }) => {
+const GameMenu = ({ setGameMode, setAIDifficulty, setDisplayName, setGameCode, setIsHost}) => {
   const [isAISelected, setIsAISelected] = useState(false);
   const [selectedDifficulty, setSelectedDifficulty] = useState('easy');
   const [factIndex, setFactIndex] = useState(0);
   const [isHumanModeChosen, setIsHumanModeChosen] = useState(false);
   const [isOnlineModeChosen, setIsOnlineModeChosen] = useState(false);
-  const [displayName, setDisplayName] = useState('');
-  const [isOnline, setIsOnline] = useState(false);
+  const [displayName, setLocalDisplayName] = useState('');
+  //const [isOnline, setIsOnline] = useState(false);
   const [onlineStep, setOnlineStep] = useState('name'); // 'name', 'select', 'host', 'join'
-  const [gameCode, setGameCode] = useState('');
+  const [gameCode, setLocalGameCode] = useState('');
   const [gameCodeInput, setGameCodeInput] = useState('');
 
 
@@ -57,6 +57,7 @@ const GameMenu = ({ setGameMode, setAIDifficulty }) => {
   const handleOnlineSelect = (hostMode) => {
     if (hostMode) {
       const code = generateGameCode();
+      setLocalGameCode(code);
       setGameCode(code);
       setOnlineStep('host');  // New view for host
     } else {
@@ -74,8 +75,10 @@ const GameMenu = ({ setGameMode, setAIDifficulty }) => {
     roomCode: code,
     name: displayName,
   });
-
-  setGameMode('ONLINE');
+    setDisplayName(displayName);
+    setGameCode(code);
+    setIsHost(isHost); 
+    setGameMode('ONLINE');
   };
   
 
@@ -123,7 +126,7 @@ const GameMenu = ({ setGameMode, setAIDifficulty }) => {
           type="text"
           placeholder="Enter Display Name"
           value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
+          onChange={(e) => setLocalDisplayName(e.target.value)}
           className="input-display-name"
         />
         <button
@@ -147,7 +150,7 @@ const GameMenu = ({ setGameMode, setAIDifficulty }) => {
     {onlineStep === 'host' && (
   <>
     <p className="game-code-display">🎉 Share this code with a friend:</p>
-    <h3 className="game-code">{gameCode}</h3>
+    <h3 className="game-code">{gameCode}</h3> 
     <button onClick={() => startOnlineGame({ isHost: true, code: gameCode })}>Start Game</button>
   </>
 )}

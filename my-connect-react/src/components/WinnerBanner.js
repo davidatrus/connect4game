@@ -2,7 +2,7 @@ import React from 'react';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@react-hook/window-size';
 
-const WinnerBanner = ({ winner, showConfetti, recycleConfetti }) => {
+const WinnerBanner = ({ winnerName, showConfetti, recycleConfetti }) => {
   const [width, height] = useWindowSize();
 
   return (
@@ -11,7 +11,7 @@ const WinnerBanner = ({ winner, showConfetti, recycleConfetti }) => {
         <Confetti width={width} height={height} recycle={recycleConfetti} />
       )}
       <div className="winner-banner">
-        🎉 Player {winner} Wins! 🎉
+       <h2> 🎉 {winnerName} Wins! 🎉 </h2>
       </div>
     </>
   );

@@ -155,7 +155,7 @@ To simulate near-perfect play. This is the ultimate test for skilled players.
 - `App.css`
 
 💡 **Why:**
-To add character, polish, and personality — perfect for a portfolio project.
+To add character, polish, and personality.
 
 ---
 

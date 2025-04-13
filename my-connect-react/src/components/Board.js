@@ -10,10 +10,10 @@ const Board = ({ board, handleClick, currentPlayer, gameMode, lastAIMove }) => (
                         key={colIndex}
                         value={cell}
                         isLastMove={lastAIMove?.row === rowIndex && lastAIMove?.col === colIndex}
-                        onClick={() =>
-                            (gameMode === 'HUMAN' || currentPlayer === 1) &&
+                        onClick={() => {
+                            console.log("✅ Cell clicked at column:", colIndex);
                             handleClick(colIndex)
-                        }
+                        }}
                     />
                 ))}
             </div>
