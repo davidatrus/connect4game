@@ -1,5 +1,6 @@
 // Updated App.js with game mode selection and AI difficulty
 import React, { useState, useEffect, useRef } from 'react';
+import { useCallback } from 'react';
 import './App.css';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@react-hook/window-size';
@@ -11,10 +12,6 @@ import { makeAIMoveEasy, makeAIMoveMedium, makeAIMoveHard, makeAIMoveImpossible}
 import { socket } from './socket';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
-
-
-
 
 const NUM_ROWS = 6;
 const NUM_COLS = 7;
@@ -30,14 +27,11 @@ function App() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [recycleConfetti, setRecycleConfetti] = useState(true);
   const [lastAIMove, setLastAIMove] = useState(null); // { row, col }
-  //const [isOnline, setIsOnline] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [gameCode, setGameCode] = useState('');
   const [isHost, setIsHost] = useState(false);
   const [opponentName, setOpponentName] = useState('');
   const [myPlayerNumber, setMyPlayerNumber] = useState(null);
-  const [rematchRequested, setRematchRequested] = useState(false);
-  const [showRematchPrompt, setShowRematchPrompt] = useState(false);
   const [countdown, setCountdown] = useState(null);
 
 
@@ -46,39 +40,23 @@ function App() {
   function createBoard() {
     return Array(NUM_ROWS).fill(null).map(() => Array(NUM_COLS).fill(null));
   }
-  // --- Above handleClick ---
-  const applyMove = (col, player, forceNextPlayer = null) => {
-    console.log('⚙️ applyMove called with:', { col, player, forceNextPlayer });
-    const row = findAvailableRow(board, col);
-    if (row === -1) return;
-  
-    const newBoard = board.map(row => [...row]);
-    newBoard[row][col] = player;
-    setBoard(newBoard);
-    console.log(`Applied move: Player ${player} → Column ${col}`);
-  
-    const newWinner = checkWinner(newBoard);
-    if (newWinner) {
-      console.log('🏆 Winner found:', newWinner);
-      setWinner(newWinner);
-      setShowConfetti(true);
-      setRecycleConfetti(true);
+  const startNewGame = () => {
+    setBoard(createBoard());
+    setCurrentPlayer(1);
+    currentPlayerRef.current = 1;
+    setWinner(null);
+    setShowConfetti(false);
+    setRecycleConfetti(true);
+    setLastAIMove(null);
+  };
+  const handleRematch = () => {
+    if (gameMode === 'ONLINE') {
+      socket.emit('rematchRequest', gameCode);
+      toast.info('⌛ Rematch request sent. Waiting for opponent...');
     } else {
-      console.log('🔄 Setting currentPlayer to:', forceNextPlayer !== null ? forceNextPlayer : 'other player');
-      if (forceNextPlayer !== null) {
-        currentPlayerRef.current = forceNextPlayer;
-        setCurrentPlayer(forceNextPlayer);
-      } else {
-        const next = player === 1 ? 2 : 1;
-        currentPlayerRef.current = next;
-        setCurrentPlayer(next);
-      }
+      startNewGame();
     }
-  
-    if (gameMode === 'AI' && player === 1) {
-      setLastAIMove(null);
-    }
-  };  
+  };
 
   const handleClick = (col) => {
     console.log("🔥 handleClick ENTRY for col:", col);
@@ -113,11 +91,11 @@ function App() {
       const current = currentPlayerRef.current;
       const nextPlayer = current === 1 ? 2 : 1;
 
-      console.log('📤 Emitting makeMove with:', {
+     /* console.log('📤 Emitting makeMove with:', {
       roomCode: gameCode,
       move: { col, player: current },
       nextPlayer
-      });
+      }); */
       socket.emit('makeMove', {
         roomCode: gameCode,
         move: { col, player: current },
@@ -128,34 +106,55 @@ function App() {
       applyMove(col, currentPlayer)
     }
   };
-
-  const makeAIMove = () => {
-    if (aiDifficulty === 'impossible') {
-        makeAIMoveImpossible(board, (col) => {
-            const row = findAvailableRow(board, col);
-            setLastAIMove({ row, col });
-            handleClick(col);
-              });
-    } else if (aiDifficulty === 'hard') {
-        makeAIMoveHard(board, (col) => {
-        const row = findAvailableRow(board, col);
-        setLastAIMove({ row, col });
-        handleClick(col);
-    });
-    } else if (aiDifficulty === 'medium') {
-        makeAIMoveMedium(board, (col) => {
-        const row = findAvailableRow(board, col);
-        setLastAIMove({ row, col });
-        handleClick(col);
-    });
+  const applyMove = (col, player, forceNextPlayer = null) => {
+    console.log('⚙️ applyMove called with:', { col, player, forceNextPlayer });
+    const row = findAvailableRow(board, col);
+    if (row === -1) return;
+  
+    const newBoard = board.map(row => [...row]);
+    newBoard[row][col] = player;
+    setBoard(newBoard);
+    console.log(`Applied move: Player ${player} → Column ${col}`);
+  
+    const newWinner = checkWinner(newBoard);
+    if (newWinner) {
+      console.log('🏆 Winner found:', newWinner);
+      setWinner(newWinner);
+      setShowConfetti(true);
+      setRecycleConfetti(true);
     } else {
-        makeAIMoveEasy(board, (col) => {
-        const row = findAvailableRow(board, col);
-        setLastAIMove({ row, col });
-        handleClick(col);
-    });
+      console.log('🔄 Setting currentPlayer to:', forceNextPlayer !== null ? forceNextPlayer : 'other player');
+      if (forceNextPlayer !== null) {
+        currentPlayerRef.current = forceNextPlayer;
+        setCurrentPlayer(forceNextPlayer);
+      } else {
+        const next = player === 1 ? 2 : 1;
+        currentPlayerRef.current = next;
+        setCurrentPlayer(next);
+      }
     }
-  };
+  
+    if (gameMode === 'AI' && player === 1) {
+      setLastAIMove(null);
+    }
+  };  
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const makeAIMove = useCallback(() => {
+    const AI = {
+      easy: makeAIMoveEasy,
+      medium: makeAIMoveMedium,
+      hard: makeAIMoveHard,
+      impossible: makeAIMoveImpossible
+    };
+  
+    AI[aiDifficulty](board, (col) => {
+      const row = findAvailableRow(board, col);
+      setLastAIMove({ row, col });
+      handleClick(col);
+    });
+  }, [aiDifficulty, board]);
+            
 
   useEffect(() => {
     if (gameMode === 'AI' && currentPlayer === 2 && !winner) {
@@ -186,7 +185,6 @@ function App() {
         setCurrentPlayer(1);
       }
     });
-  
     return () => {
       socket.off('playerInfo');
     };
@@ -222,26 +220,56 @@ useEffect(() => {
     applyMove(col, player, nextPlayer);
   });
   socket.on('rematchRequest', () => {
-    console.log('🔄 Received rematch request from opponent');
-    setBoard(createBoard());
-    setCurrentPlayer(1);
-    currentPlayerRef.current = 1;
-    setWinner(null);
-    setShowConfetti(false);
-    setRecycleConfetti(true);
-    setLastAIMove(null);
-
-    toast.info('🔁 Opponent started a rematch!');
+    const confirmed = window.confirm("Your opponent wants a rematch. Accept?");
+    if (confirmed) {
+      socket.emit('rematchAccepted', gameCode);
+    } else {
+      socket.emit('rematchDeclined', gameCode);
+      resetGame();
+    }
   });
+  socket.on('rematchAccepted', () => {
+    toast.success("✅ Opponent accepted the rematch!");
+    socket.emit('startRematch', gameCode); // Trigger rematch for both players
+  });
+  socket.on('rematchDeclined', () => {
+    toast.error("❌ Opponent declined the rematch.");
+    setTimeout(() => resetGame(), 1500);
+    console.log('🔙 Rematch declined — resetting to menu');
+    resetGame();
+  });
+  socket.on('startRematch', () => {
+    console.log("🎬 Received 'startRematch' from server!");
+    setWinner(null);
+    setCountdown(3);
+    toast.success('🎮 New rematch started!');
+    const countdownInterval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev === 1) {
+          clearInterval(countdownInterval);
+          setCountdown(null);
+          startNewGame();
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  });
+  
 
   return () => {
     socket.off('opponentMove');
     socket.off('rematchRequest')
+    socket.off('rematchAccepted');
+    socket.off('rematchDeclined');
+    socket.off('startRematch');
   };
-}, [gameMode, board]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [gameMode, board, gameCode]);
 
 
   const resetGame = () => {
+    console.log('🔁 Resetting game to menu...');
     setBoard(createBoard());
     setCurrentPlayer(1);
     currentPlayerRef.current = 1;
@@ -251,26 +279,8 @@ useEffect(() => {
     setRecycleConfetti(true);
     setLastAIMove(null);
     setMyPlayerNumber(null);
-
   };
-  const handleRematch = () => {
-    setBoard(createBoard());
-    setCurrentPlayer(1);
-    currentPlayerRef.current = 1;
-    setWinner(null);
-    setShowConfetti(false);
-    setRecycleConfetti(true);
-    setLastAIMove(null);
-    toast.success('🎮 New rematch started!');
-    
-    if (gameMode === 'ONLINE') {
-      socket.emit('rematchRequest', gameCode);
-    }
-
-  };
-  const resetToMenu = () => {
-    resetGame(); // reuse the existing one
-  };
+  const resetToMenu = () => resetGame();
 
   if (!gameMode) {
     return <GameMenu setGameMode={setGameMode} setAIDifficulty={setAIDifficulty} setDisplayName={setDisplayName}
@@ -280,10 +290,14 @@ useEffect(() => {
 
   return (
     <>
-      {showConfetti && (
-        <Confetti width={width} height={height} recycle={recycleConfetti} />
-      )}
+      {showConfetti && (<Confetti width={width} height={height} recycle={recycleConfetti} />)}
       <div className="App">
+        {/* ⏳ COUNTDOWN OVERLAY */}
+      {countdown && (
+        <div className="countdown-text">
+          <h2>GAME STARTS IN: {countdown}...</h2>
+        </div>
+      )}
         <h1>Connect 4</h1>
         {winner ? (
           <WinnerBanner
@@ -292,9 +306,7 @@ useEffect(() => {
       ? winner === myPlayerNumber
         ? displayName
         : opponentName
-      : `Player ${winner}`
-  }
-/>
+      : `Player ${winner}`}/>
         ) : (
           <p className="turn-indicator">
           {gameMode === 'ONLINE'
@@ -315,7 +327,7 @@ useEffect(() => {
           lastAIMove={lastAIMove}
         />
         <div className="button-group">
-        <button className="reset-button" onClick={handleRematch}>Rematch</button>
+        <button className="reset-button" onClick={handleRematch} disabled={!winner} title={!winner ? "Can only rematch once there's a winner!" : ""}>Rematch</button>
         <button className="reset-button" onClick={resetToMenu}>Back to Menu</button>
         </div>
       </div>
@@ -326,8 +338,7 @@ useEffect(() => {
       hideProgressBar={true}
       closeOnClick
       pauseOnHover={false}
-      draggable={false}
-    />
+      draggable={false}/>
     </>
   );
 }
