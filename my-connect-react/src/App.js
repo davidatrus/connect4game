@@ -32,8 +32,7 @@ function App() {
   const [isHost, setIsHost] = useState(false);
   const [opponentName, setOpponentName] = useState('');
   const [myPlayerNumber, setMyPlayerNumber] = useState(null);
-  const [countdown, setCountdown] = useState(null);
-
+  const [countdownText, setCountdownText] = useState(null);
 
 
 
@@ -173,6 +172,40 @@ function App() {
       return () => clearTimeout(stopRecycling);
     }
   }, [showConfetti]);
+  //handling in event of unexpected disconnections
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (gameMode === 'ONLINE') {
+        socket.emit('leaveRoom', gameCode);
+      }
+    };
+  
+    window.addEventListener('beforeunload', handleBeforeUnload);
+  
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [gameMode, gameCode]);
+  useEffect(() => {
+  socket.on('startRematch', () => {
+    console.log("🎬 Received 'startRematch' from server!");
+    setWinner(null);
+    let steps = ['GAME STARTS IN: 3...', '2...', '1...', 'Start!!!'];
+    let index = 0;
+    setCountdownText(steps[index]);
+    const interval = setInterval(() => {
+      index++;
+      if (index === steps.length) {
+        clearInterval(interval);
+        setCountdownText(null);
+        startNewGame();
+      } else {
+        setCountdownText(steps[index]);
+      }
+    }, 1000);
+  });  return () => socket.off('startRematch');
+}, []);
+
   useEffect(() => {
     socket.on('playerInfo', ({ myName, opponentName, playerNumber }) => {
       console.log("🎮 Received playerInfo:", { myName, opponentName, playerNumber });
@@ -233,28 +266,18 @@ useEffect(() => {
     socket.emit('startRematch', gameCode); // Trigger rematch for both players
   });
   socket.on('rematchDeclined', () => {
-    toast.error("❌ Opponent declined the rematch.");
-    setTimeout(() => resetGame(), 1500);
-    console.log('🔙 Rematch declined — resetting to menu');
+    toast.error("❌ Opponent declined the rematch. Returning to main menu...");
+    setTimeout(() => resetGame(), 2000);
+  });
+  socket.on('opponentLeft', () => {
+    console.log("👋 Received 'opponentLeft' — opponent has left.");
+    toast.error("⚠️ Opponent has left the game. Returning to menu...");
+     // Give toast time to show
+  setTimeout(() => {
     resetGame();
+  }, 2000);
   });
-  socket.on('startRematch', () => {
-    console.log("🎬 Received 'startRematch' from server!");
-    setWinner(null);
-    setCountdown(3);
-    toast.success('🎮 New rematch started!');
-    const countdownInterval = setInterval(() => {
-      setCountdown(prev => {
-        if (prev === 1) {
-          clearInterval(countdownInterval);
-          setCountdown(null);
-          startNewGame();
-          return null;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  });
+  
   
 
   return () => {
@@ -262,7 +285,7 @@ useEffect(() => {
     socket.off('rematchRequest')
     socket.off('rematchAccepted');
     socket.off('rematchDeclined');
-    socket.off('startRematch');
+    socket.off('opponentLeft')
   };
   // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [gameMode, board, gameCode]);
@@ -273,6 +296,8 @@ useEffect(() => {
     setBoard(createBoard());
     setCurrentPlayer(1);
     currentPlayerRef.current = 1;
+    setDisplayName('');
+    setOpponentName('');
     setWinner(null);
     setGameMode(null); // This kicks back to the menu
     setShowConfetti(false);
@@ -280,8 +305,16 @@ useEffect(() => {
     setLastAIMove(null);
     setMyPlayerNumber(null);
   };
-  const resetToMenu = () => resetGame();
-
+  const resetToMenu = () => { 
+    if (gameMode === 'ONLINE') {
+      const confirmLeave = window.confirm("Are you sure you want to return to the menu? This will end your current game.");
+      if (!confirmLeave) return;
+  
+      // Let the opponent know someone is leaving
+      socket.emit('leaveRoom', gameCode);
+    }
+    resetGame();
+  };
   if (!gameMode) {
     return <GameMenu setGameMode={setGameMode} setAIDifficulty={setAIDifficulty} setDisplayName={setDisplayName}
     setGameCode={setGameCode}
@@ -293,9 +326,9 @@ useEffect(() => {
       {showConfetti && (<Confetti width={width} height={height} recycle={recycleConfetti} />)}
       <div className="App">
         {/* ⏳ COUNTDOWN OVERLAY */}
-      {countdown && (
-        <div className="countdown-text">
-          <h2>GAME STARTS IN: {countdown}...</h2>
+      {countdownText && (
+        <div className="countdown-overlay fade-text">
+          <h2 style={{ color: 'black' }} >{countdownText}</h2>
         </div>
       )}
         <h1>Connect 4</h1>
