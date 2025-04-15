@@ -229,7 +229,7 @@ function App() {
     console.log("🎬 Received 'startRematch' from server!");
     setWinner(null);
     if (countdownRef.current) {
-      countdownRef.current.currentTime = 0; // rewind if previously played
+      countdownRef.current.currentTime = 0;
       countdownRef.current.play();
     }
   
