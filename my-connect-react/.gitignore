@@ -31,5 +31,3 @@ dist/
 # OS / misc
 .DS_Store
 
-# Backend (local-only server file)
-server.js
