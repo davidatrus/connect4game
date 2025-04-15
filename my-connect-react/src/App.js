@@ -23,6 +23,8 @@ function App() {
   const [winner, setWinner] = useState(null);
   const [gameMode, setGameMode] = useState(null); // 'HUMAN' or 'AI'
   const [aiDifficulty, setAIDifficulty] = useState('easy');
+  const [showAIDifficultyPrompt, setShowAIDifficultyPrompt] = useState(false);
+  const [aiRematchOptionsVisible, setAIRematchOptionsVisible] = useState(false);
   const [width, height] = useWindowSize();
   const [showConfetti, setShowConfetti] = useState(false);
   const [recycleConfetti, setRecycleConfetti] = useState(true);
@@ -55,7 +57,10 @@ function App() {
     if (gameMode === 'ONLINE') {
       socket.emit('rematchRequest', gameCode);
       toast.info('⌛ Rematch request sent. Waiting for opponent...');
+    } else if (gameMode === 'AI') {
+        setShowAIDifficultyPrompt(true);
     } else {
+      toast.success('🔄 New game started!');
       startNewGame();
     }
   };
@@ -244,22 +249,38 @@ function App() {
   });  return () => socket.off('startRematch');
 }, []);
 
-  useEffect(() => {
-    socket.on('playerInfo', ({ myName, opponentName, playerNumber }) => {
-      console.log("🎮 Received playerInfo:", { myName, opponentName, playerNumber });
-      setDisplayName(myName);
-      setOpponentName(opponentName);
-      setMyPlayerNumber(playerNumber); // use the number sent from the server directly
+useEffect(() => {
+  socket.on('playerInfo', ({ myName, opponentName, playerNumber }) => {
+    console.log("🎮 Received playerInfo:", { myName, opponentName, playerNumber });
 
-      if (playerNumber === 1) {
-        currentPlayerRef.current = 1;
-        setCurrentPlayer(1);
-      }
-    });
-    return () => {
-      socket.off('playerInfo');
-    };
-  }, []);
+    const isSameName = myName.trim().toLowerCase() === opponentName.trim().toLowerCase();
+
+    const resolvedMyName = isSameName
+      ? playerNumber === 1
+        ? `${myName} (Host)`
+        : `${myName} (Joiner)`
+      : myName;
+
+    const resolvedOpponentName = isSameName
+      ? playerNumber === 1
+        ? `${opponentName} (Joiner)`
+        : `${opponentName} (Host)`
+      : opponentName;
+
+    setDisplayName(resolvedMyName);
+    setOpponentName(resolvedOpponentName);
+    setMyPlayerNumber(playerNumber);
+
+    if (playerNumber === 1) {
+      currentPlayerRef.current = 1;
+      setCurrentPlayer(1);
+    }
+  });
+
+  return () => {
+    socket.off('playerInfo');
+  };
+}, []);
   
   
   // Socket listener setup
@@ -411,6 +432,47 @@ useEffect(() => {
         <button className="reset-button" onClick={handleRematch} disabled={!winner} title={!winner ? "Can only rematch once there's a winner!" : ""}>Rematch</button>
         <button className="reset-button" onClick={resetToMenu}>Back to Menu</button>
         </div>
+         {/* Adding the AI Rematch Modal  */}
+         {showAIDifficultyPrompt && (
+  <div className="modal-overlay">
+    <div className="modal-content">
+      <h3>Change AI difficulty?</h3>
+      <div className="modal-buttons">
+        <button onClick={() => setAIRematchOptionsVisible(true)}>Yes</button>
+        <button
+          onClick={() => {
+            setShowAIDifficultyPrompt(false);
+            startNewGame();
+          }}
+        >
+          No
+        </button>
+      </div>
+
+      {aiRematchOptionsVisible && (
+        <select
+          onChange={(e) => {
+            setAIDifficulty(e.target.value);
+            setShowAIDifficultyPrompt(false);
+            setAIRematchOptionsVisible(false);
+            startNewGame();
+          }}
+          defaultValue=""
+        >
+          <option value="" disabled>Select difficulty</option>
+          {['easy', 'medium', 'hard', 'impossible']
+            .filter(diff => diff !== aiDifficulty)
+            .map(diff => (
+              <option key={diff} value={diff}>
+                {diff.charAt(0).toUpperCase() + diff.slice(1)}
+              </option>
+          ))}
+        </select>
+      )}
+    </div>
+  </div>
+)}
+
       </div>
     
     <ToastContainer
