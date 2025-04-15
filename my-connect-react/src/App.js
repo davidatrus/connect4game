@@ -33,8 +33,11 @@ function App() {
   const [opponentName, setOpponentName] = useState('');
   const [myPlayerNumber, setMyPlayerNumber] = useState(null);
   const [countdownText, setCountdownText] = useState(null);
-
-
+  const countdownRef = useRef(null);
+  const victoryRef = useRef(null);
+  const defeatRef = useRef(null);
+  const disconnectRef = useRef(null);
+  const moveClinkRef = useRef(null);
 
   function createBoard() {
     return Array(NUM_ROWS).fill(null).map(() => Array(NUM_COLS).fill(null));
@@ -113,14 +116,45 @@ function App() {
     const newBoard = board.map(row => [...row]);
     newBoard[row][col] = player;
     setBoard(newBoard);
+
+    if (moveClinkRef.current) {
+      moveClinkRef.current.currentTime = 0; // rewind if needed
+      moveClinkRef.current.play();
+    }
+
     console.log(`Applied move: Player ${player} → Column ${col}`);
-  
+
     const newWinner = checkWinner(newBoard);
     if (newWinner) {
       console.log('🏆 Winner found:', newWinner);
       setWinner(newWinner);
       setShowConfetti(true);
       setRecycleConfetti(true);
+      if (gameMode === 'AI') {
+        // User is always player 1 in AI mode
+        if (newWinner === 1 && victoryRef.current) {
+          victoryRef.current.currentTime = 0;
+          victoryRef.current.play();
+        } else if (newWinner === 2 && defeatRef.current) {
+          defeatRef.current.currentTime = 0;
+          defeatRef.current.play();
+        }
+      } else if (gameMode === 'ONLINE') {
+        // newWinner === myPlayerNumber means I won
+        if (newWinner === myPlayerNumber && victoryRef.current) {
+          victoryRef.current.currentTime = 0;
+          victoryRef.current.play();
+        } else if (newWinner !== myPlayerNumber && defeatRef.current) {
+          defeatRef.current.currentTime = 0;
+          defeatRef.current.play();
+        }
+      } else {
+        // LOCAL play (Human vs Human on same device)
+        if (victoryRef.current) {
+          victoryRef.current.currentTime = 0;
+          victoryRef.current.play();
+        }
+      }    
     } else {
       console.log('🔄 Setting currentPlayer to:', forceNextPlayer !== null ? forceNextPlayer : 'other player');
       if (forceNextPlayer !== null) {
@@ -153,8 +187,7 @@ function App() {
       handleClick(col);
     });
   }, [aiDifficulty, board]);
-            
-
+     
   useEffect(() => {
     if (gameMode === 'AI' && currentPlayer === 2 && !winner) {
       const aiTimeout = setTimeout(() => {
@@ -190,6 +223,11 @@ function App() {
   socket.on('startRematch', () => {
     console.log("🎬 Received 'startRematch' from server!");
     setWinner(null);
+    if (countdownRef.current) {
+      countdownRef.current.currentTime = 0; // rewind if previously played
+      countdownRef.current.play();
+    }
+  
     let steps = ['GAME STARTS IN: 3...', '2...', '1...', 'Start!!!'];
     let index = 0;
     setCountdownText(steps[index]);
@@ -271,6 +309,10 @@ useEffect(() => {
   });
   socket.on('opponentLeft', () => {
     console.log("👋 Received 'opponentLeft' — opponent has left.");
+    if (disconnectRef.current) {
+      disconnectRef.current.currentTime = 0;
+      disconnectRef.current.play();
+    }
     toast.error("⚠️ Opponent has left the game. Returning to menu...");
      // Give toast time to show
   setTimeout(() => {
@@ -335,11 +377,17 @@ useEffect(() => {
         {winner ? (
           <WinnerBanner
   winnerName={
-    gameMode === 'ONLINE'
-      ? winner === myPlayerNumber
-        ? displayName
-        : opponentName
-      : `Player ${winner}`}/>
+   gameMode === 'ONLINE'
+        ? winner === myPlayerNumber
+          ? displayName
+          : opponentName
+        : gameMode === 'AI'
+          ? winner === 1
+            ? 'You'
+            : `${aiDifficulty.charAt(0).toUpperCase() + aiDifficulty.slice(1)} AI`
+          : `Player ${winner}`
+    }
+  />
         ) : (
           <p className="turn-indicator">
           {gameMode === 'ONLINE'
@@ -372,6 +420,14 @@ useEffect(() => {
       closeOnClick
       pauseOnHover={false}
       draggable={false}/>
+      {/*rendering auido tags  */}
+      <audio ref={victoryRef} src="/sounds/victory.mp3" />
+      <audio ref={defeatRef} src="/sounds/defeat.mp3" />
+      <audio ref={disconnectRef} src="/sounds/disconnect.mp3" />
+      <audio ref={countdownRef} src="/sounds/countdown.wav" />
+      <audio ref={moveClinkRef} src="/sounds/move-clink.mp3" />
+
+
     </>
   );
 }
