@@ -1,7 +1,8 @@
 # Connect 4: AI Showdown 🎯
 
 🚀 **Want to try it out?**  
-Play the game live here 👉 [https://inspiring-fox-28c024.netlify.app](https://inspiring-fox-28c024.netlify.app)
+Play the game live here 👉 [https://connect4game.onrender.com](https://connect4game.onrender.com)  
+_(Previously on Netlify — now hosted on Render with a full backend server)_
 
 ---
 
@@ -9,161 +10,135 @@ Play the game live here 👉 [https://inspiring-fox-28c024.netlify.app](https://
 
 ---
 
-### 🧠 1. Game Modes Feature
-✅ **Change:**
-- Added a game mode menu with two options:
-  - 🧑‍🤝‍🧑 Play vs Human
-  - 🤖 Play vs Computer
+### 🌐 0. NEW: Online Multiplayer Mode 🎮
+✅ **Changes:**
+- Added full **online multiplayer support**:
+  - Create or join a private room via code
+  - Host public rooms and join via browserable lobby
+  - Real-time gameplay with Socket.IO
+  - Synced rematches with countdowns
+  - Player name display and disconnection handling
 
 📌 **Files Affected:**
 - `App.js`
-- `GameMenu.js` (new component)
+- `GameMenu.js`
+- `socket.js`
+- `server.js` (backend logic)
 
 💡 **Why:**
-To allow players to choose between local multiplayer and a single-player experience against AI.
+To turn the game into a social, real-time experience — challenge your friends or random opponents online!
+
+---
+
+### 🧠 1. Game Modes Feature
+✅ **Changes:**
+- Added a game mode menu with three options:
+  - 🧑‍🤝‍🧑 Local Play vs Human
+  - 🤖 Play vs AI
+  - 🌐 Play Online
+
+📌 **Files Affected:**
+- `App.js`
+- `GameMenu.js`
+
+💡 **Why:**
+To support every kind of player — solo, local, and online.
 
 ---
 
 ### 🤖 2. AI Difficulty Options
-✅ **Change:**
-- Added four AI difficulty levels:
-  - **Easy**: Random valid moves
-  - **Medium**:
-    - Tries to win if possible
-    - Blocks opponent’s winning moves
-    - Favors center column
-    - Extends its own streaks
-  - **Hard**: Uses Minimax with limited depth and basic evaluation
-  - **Impossible**: Uses Minimax + Alpha-Beta pruning with evaluation and adaptive depth
+✅ **Changes:**
+- Four levels: Easy, Medium, Hard, Impossible
+- Logic scales from random to perfect Minimax + Alpha-Beta play
 
 📌 **Files Affected:**
-- `App.js`
-- `GameMenu.js`
-- `useAI.js` (new in `/hooks`)
+- `App.js`, `GameMenu.js`, `useAI.js`
 
 💡 **Why:**
-To support scalable difficulty for players of different skill levels and showcase AI logic development.
+To showcase AI design and make the game engaging at all skill levels.
 
 ---
 
-### ✨ 3. Winner UI & Visual Effects
-✅ **Change:**
-- Added `WinnerBanner.js`
-- Confetti animation using `react-confetti`:
-  - Starts only on win
-  - Stops generating after 5 seconds
-  - Falls naturally (via `recycle=false`)
+### ✨ 3. Winner UI & Confetti
+✅ **Changes:**
+- `WinnerBanner.js`
+- Confetti triggered only when a player wins (using `react-confetti`)
 
-📌 **Files Affected:**
-- `App.js`
-- `WinnerBanner.js` (new)
-- Installed: `react-confetti`, `@react-hook/window-size`
-
-💡 **Why:**
-To add visual flair and reinforce satisfying game outcomes.
 
 ---
 
 ### 🎨 4. UI/UX Polish
-✅ **Change:**
-- Full visual overhaul:
-  - Animated bouncing tokens
-  - Title slide-in + glow effect
-  - Polished button hover states
-  - Font updated to **Poppins**
-  - Menu redesigned as a centered card
-  - Game board improved with shadows and highlights
-
-📌 **Files Affected:**
-- `App.css`
-- `App.js`
-- `GameMenu.js`
-
-💡 **Why:**
-To make the app visually appealing, modern, and portfolio-worthy.
+✅ Animated tokens, glowing title, button hovers, `Poppins` font, polished layout, and mobile support.
 
 ---
 
-### 🧼 5. Codebase Refactor & Modularization
-✅ **Change:**
-- Modularized major logic components:
-  - `Board.js` – board display and cell interaction
-  - `WinnerBanner.js` – winner display
-  - `GameMenu.js` – mode and difficulty selector
-  - `useAI.js` – all AI logic
-  - `gameLogic.js` – utility logic (win detection, row finding)
-
-📌 **Files Added:**
-- `/components/Board.js`
-- `/components/GameMenu.js`
-- `/components/WinnerBanner.js`
-- `/hooks/useAI.js`
-- `/utils/gameLogic.js`
-
-💡 **Why:**
-To improve readability, reusability, and maintenance as the game grows.
+### 🧼 5. Refactor & Modularization
+✅ Organized the codebase into `/components`, `/hooks`, `/utils`
 
 ---
 
-### 🧩 6. Bug Fixes
-✅ **Change:**
-- Fixed casing mismatch in imports (important on macOS)
-- Prevented confetti from appearing at game start
-- Fixed `checkWinner` undefined in `useAI.js`
-- Resolved missing React hook dependency warning
-- Highlighted last AI move correctly
-
-📌 **Files Affected:**
-- `App.js`
-- `useAI.js`
-- General file/folder organization
-
-💡 **Why:**
-To ensure stability and correct game behavior.
+### 🐛 6. Bug Fixes
+✅ **Changes:**
+- Resolved a number of key multiplayer bugs:
+  - Fixed bug where both online players had the same name
+  - Fixed room state not cleaning up properly after host/guest disconnection
+  - Fixed bug where name from previous match would persist incorrectly
+  - Fixed rematch bugs across all modes (AI, Local, Online)
+- AI Rematch Flow:
+  - Added prompt to allow player to **keep the same AI difficulty** or **change to a different one** on rematch
+  - Disabled selecting the same level again during difficulty selection
+- General:
+  - Prevented confetti from appearing on load
+  - Correctly highlighted last move for AI
+  - Resolved casing mismatches and React hook dependency warnings
 
 ---
 
 ### 🚀 7. Impossible AI (Perfect Play Mode)
-✅ **Change:**
-- Implemented `makeAIMoveImpossible()` using Minimax + Alpha-Beta Pruning
-- Added adaptive depth depending on remaining moves for performance
-- Includes a full evaluation heuristic:
-  - Center control
-  - Streaks of 2–4
-  - Blocking opponent threats
-
-📌 **Files Affected:**
-- `useAI.js`
-- `App.js`
-- `GameMenu.js`
-
-💡 **Why:**
-To simulate near-perfect play. This is the ultimate test for skilled players.
-
-🔐 **Fun Fact:** Connect 4 is a solved game — first player can always win with perfect play!
+✅ Uses full Minimax + Alpha-Beta pruning with dynamic depth and evaluation scoring
 
 ---
 
 ### 💡 8. Fun Facts + Developer Touches
-✅ **Change:**
-- Added a cycling `fun-fact` card to the main menu
-- Displays trivia, strategy tips, and dev notes
-- Subtle animations for transitions
+✅ Rotating trivia card, subtle transitions, and little touches throughout
+
+---
+
+### 🔧 9. Deployment & Hosting (NEW)
+✅ Switched from Netlify (frontend-only) to **Render** for full backend support:
+- Socket.IO server now lives in the same Render service as the React frontend
+- Simplified environment, no CORS hacks or proxies
+- Single deploy pipeline
+
+💡 **Why the switch?**
+To support real-time multiplayer, you need a persistent Node.js server — Render made full-stack deployment seamless.
+
+---
+
+### 🔊 10. Sound Effects Integration
+✅ **Changes:**
+- Added custom audio to enhance feedback and immersion:
+  - ✅ Victory & Defeat chimes
+  - ✅ Click sound for dropping a token
+  - ✅ Countdown ticking sound before rematch
+  - ✅ Disconnect alert sound when opponent leaves
 
 📌 **Files Affected:**
-- `GameMenu.js`
-- `App.css`
-
-💡 **Why:**
-To add character, polish, and personality.
+- `App.js`, `WinnerBanner.js`, and sound utility logic
 
 ---
 
-### 🌟 Final Touches
-- Updated favicon and webpage title to **"Connect 4: AI Showdown"**
-- Improved button styles, shadows, animations
-- Cleaned and optimized CSS
-- Game is mobile-friendly and visually consistent across screen sizes
+### 🗂 Folder Structure (Simplified)
+```
+/client         ← React frontend (builds to /client/build)
+/server.js      ← Express + Socket.IO backend
+/components     ← UI pieces (Board, Menu, WinnerBanner)
+/hooks          ← Custom hooks (AI logic)
+/utils          ← Utility functions (checkWinner, etc.)
+```
 
 ---
 
+### 📌 Current Version: `v2.0.0`  
+- `v1.x`: AI-focused single-player release  
+- `v2.0`: Online Multiplayer + Render Hosting

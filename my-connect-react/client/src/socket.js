@@ -1,4 +1,10 @@
 // src/socket.js
 import { io } from 'socket.io-client';
 
-export const socket = io("http://localhost:4000"); // Adjust for deployment later
+const socket = io(
+  process.env.NODE_ENV === 'production'
+    ? window.location.origin
+    : 'http://localhost:4000'
+);
+
+export default socket;
