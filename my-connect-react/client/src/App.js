@@ -9,7 +9,7 @@ import WinnerBanner from './components/WinnerBanner';
 import Board from './components/Board';
 import { checkWinner, findAvailableRow } from './utils/gameLogic';
 import { makeAIMoveEasy, makeAIMoveMedium, makeAIMoveHard, makeAIMoveImpossible} from './hooks/useAI';
-import { socket } from './socket';
+import socket  from './socket';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 

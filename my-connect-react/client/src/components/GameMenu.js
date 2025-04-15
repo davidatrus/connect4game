@@ -1,6 +1,6 @@
 // GameMenu.js — updated with public/private game options
 import React, { useState, useEffect } from 'react';
-import { socket } from '../socket'; 
+import  socket  from '../socket'; 
 
 const GameMenu = ({ setGameMode, setAIDifficulty, setDisplayName, setGameCode, setIsHost}) => {
   const [isAISelected, setIsAISelected] = useState(false);
