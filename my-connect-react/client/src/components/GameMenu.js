@@ -252,12 +252,12 @@ const GameMenu = ({ setGameMode, setAIDifficulty, setDisplayName, setGameCode, s
             {onlineStep === 'publicList' && (
               <>
                 <h3>Select a Public Game:</h3>
-                <button
-      className="refresh-button"
-      onClick={() => socket.emit('getPublicGames')}
-    >
-      🔄 Refresh
-    </button>
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '8px' }}>
+  <div className="auto-refresh-indicator" title="Public game list updates in real-time.">
+  <div className="dot" /> Auto-refreshing
+  </div>
+</div>
+
                 <ul className="public-game-list">
                 {publicGames.length === 0 && <li className="public-game-item empty">No public games available.</li>}
       {publicGames.map((game) => (

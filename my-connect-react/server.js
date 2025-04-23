@@ -113,43 +113,30 @@ io.on('connection', (socket) => {
 
   socket.on('leaveRoom', (roomCode) => {
     console.log(`🚪 Player is leaving room ${roomCode}`);
-
-    const room = io.sockets.adapter.rooms.get(roomCode);
-    console.log('📦 Sockets remaining in room:', room ? [...room] : 'none');
-
-    socket.broadcast.to(roomCode).emit('opponentLeft');
-    console.log(`📤 Emitting 'opponentLeft' to room ${roomCode}`);
-
+  
+    if (!roomPlayers[roomCode]) return;
+  
+    io.to(roomCode).emit('opponentLeft');
+    delete roomPlayers[roomCode];
     socket.leave(roomCode);
+  
+    console.log(`🧹 Room ${roomCode} deleted on leave`);
+    broadcastUpdatedPublicGames();
   });
-
+  
   socket.on('disconnect', () => {
     console.log(`🔴 User disconnected: ${socket.id}`);
-  const roomCode = socket.roomCode;
-
-  if (roomCode) {
-    const players = roomPlayers[roomCode];
-
-    if (!players) return;
-
-    const isHost = players.host === socket.id || !players.guest;
-
-    // Clean up if host leaves
-    if (isHost) {
-      console.log(`🧹 Host disconnected — deleting room ${roomCode}`);
-      delete roomPlayers[roomCode];
-      io.to(roomCode).emit('opponentLeft');
-      broadcastUpdatedPublicGames();
-    } else {
-      console.log(`👤 Guest disconnected — keeping room ${roomCode}`);
-      roomPlayers[roomCode].guest = null;
-      io.to(roomCode).emit('opponentLeft');
-      broadcastUpdatedPublicGames();
-    }
-
+  
+    const roomCode = socket.roomCode;
+    if (!roomCode || !roomPlayers[roomCode]) return;
+  
+    io.to(roomCode).emit('opponentLeft');
+    delete roomPlayers[roomCode];
     socket.leave(roomCode);
-  }
-});
+  
+    console.log(`🧹 Room ${roomCode} deleted on disconnect`);
+    broadcastUpdatedPublicGames();
+  });  
 });
 
 // Serve frontend static files in production

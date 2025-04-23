@@ -26,7 +26,7 @@ _(Previously on Netlify — now hosted on Render with a full backend server)_
 - `server.js` (backend logic)
 
 💡 **Why:**
-To turn the game into a social, real-time experience — challenge your friends or random opponents online!
+To turn the game into a social, real-time experience. Challenge your friends or random opponents online!
 
 ---
 
@@ -42,7 +42,7 @@ To turn the game into a social, real-time experience — challenge your friends 
 - `GameMenu.js`
 
 💡 **Why:**
-To support every kind of player — solo, local, and online.
+To support every kind of player: solo, local, and online.
 
 ---
 
@@ -139,6 +139,41 @@ To support real-time multiplayer, you need a persistent Node.js server — Rende
 
 ---
 
-### 📌 Current Version: `v2.0.0`  
+### 📌 Current Version: `v2.0.1`  
 - `v1.x`: AI-focused single-player release  
 - `v2.0`: Online Multiplayer + Render Hosting
+---
+
+### 🛠 April 23rd Patch Notes — Quality of Life & Bug Fix Roundup
+
+✅ **Changes & Improvements:**
+
+- 🎵 **Victory & Defeat Sound Tweaks**  
+  - Lowered volume of victory/defeat sounds to improve user experience across devices.
+
+- 🧹 **Online Room Cleanup Reliability**  
+  - Fixed issue where public game rooms weren't being cleaned up when a host returned to the main menu.
+  - Improved socket `leaveRoom` and `disconnect` logic for proper lobby list updates.
+
+- 🎯 **Last Move Highlighting (Now for Everyone)**  
+  - Extended last-move highlight to support **both players** (not just AI).
+  - Automatically disables highlight when a winner is declared.
+
+- 🏆 **Winning Line Visuals**
+  - Game now visually highlights **all four winning cells** using blinking animation and colored glow (red or goldenrod based on player).
+  - Fully integrated with `checkWinner` logic which now returns both the winner and the winning cell coordinates.
+
+- 🎨 **UI & CSS Enhancements**
+  - Refined `winning-cell` styling for clarity: smoother blink, added soft glow, subtle scale pop.
+  - Fixed animation clash between `last-move` and `winning-cell`.
+
+- 🔄 **Auto-Refreshing Lobby Indicator**
+  - Removed manual "Refresh" button from the Public Game Lobby.
+  - Replaced with a dynamic “🟢 Auto-refreshing” status icon and pulsing dot to signal live updates.
+
+✅ **Files Touched:**
+- `App.js`, `Board.js`, `Cell.js`, `gameLogic.js`, `useAI.js`, `GameMenu.js`, `server.js`
+- CSS: `.winning-cell`, `.last-move`, `@keyframes`, and added `.auto-refresh-indicator`
+
+💡 **Why?**  
+To elevate visual clarity, game feedback, and reliability; especially for online play and AI challenge integrity.

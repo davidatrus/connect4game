@@ -97,14 +97,16 @@ export const makeAIMoveEasy = (board, handleClick) => {
     };
   
     const scorePosition = (b) => {
-      const winner = checkWinner(b);
+      const result = checkWinner(b);
+      const winner = result?.winner;
       if (winner === 2) return 100;
       if (winner === 1) return -100;
       return 0;
     };
   
     const minimax = (b, depth, maximizingPlayer) => {
-      const winner = checkWinner(b);
+      const result = checkWinner(b);
+      const winner = result?.winner;
       if (depth === 0 || winner) {
         return scorePosition(b);
       }
@@ -247,7 +249,8 @@ export const makeAIMoveEasy = (board, handleClick) => {
   
     const minimax = (board, depth, alpha, beta, maximizingPlayer) => {
       const validCols = getValidColumns(board);
-      const winner = checkWinner(board);
+      const result = checkWinner(board);
+      const winner = result?.winner;
       if (winner === 2) return 100000;
       if (winner === 1) return -100000;
       if (depth === 0 || validCols.length === 0) {
@@ -287,7 +290,7 @@ export const makeAIMoveEasy = (board, handleClick) => {
   
     for (const col of sortedCols) {
       const newBoard = simulateMove(board, col, 2);
-      const score = minimax(newBoard, MAX_DEPTH, -Infinity, Infinity, false);
+      const score = minimax(newBoard, MAX_DEPTH - 1, -Infinity, Infinity, false);
       if (score > bestScore) {
         bestScore = score;
         bestMove = col;

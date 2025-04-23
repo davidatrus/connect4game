@@ -28,7 +28,8 @@ function App() {
   const [width, height] = useWindowSize();
   const [showConfetti, setShowConfetti] = useState(false);
   const [recycleConfetti, setRecycleConfetti] = useState(true);
-  const [lastAIMove, setLastAIMove] = useState(null); // { row, col }
+  const [lastMove, setLastMove] = useState(null);
+  const [winningCells, setWinningCells] = useState([]);
   const [displayName, setDisplayName] = useState('');
   const [gameCode, setGameCode] = useState('');
   const [isHost, setIsHost] = useState(false);
@@ -51,7 +52,8 @@ function App() {
     setWinner(null);
     setShowConfetti(false);
     setRecycleConfetti(true);
-    setLastAIMove(null);
+    setLastMove(null);
+    setWinningCells(null);
   };
   const handleRematch = () => {
     if (gameMode === 'ONLINE') {
@@ -121,6 +123,7 @@ function App() {
     const newBoard = board.map(row => [...row]);
     newBoard[row][col] = player;
     setBoard(newBoard);
+    setLastMove({ row, col });
 
     if (moveClinkRef.current) {
       moveClinkRef.current.currentTime = 0; // rewind if needed
@@ -129,33 +132,39 @@ function App() {
 
     console.log(`Applied move: Player ${player} → Column ${col}`);
 
-    const newWinner = checkWinner(newBoard);
-    if (newWinner) {
-      console.log('🏆 Winner found:', newWinner);
-      setWinner(newWinner);
+    const result = checkWinner(newBoard);
+    if (result) {
+      console.log('🏆 Winner found:', result);
+      setWinner(result.winner);
+      setWinningCells(result.cells);
       setShowConfetti(true);
       setRecycleConfetti(true);
       if (gameMode === 'AI') {
         // User is always player 1 in AI mode
-        if (newWinner === 1 && victoryRef.current) {
+        if (result.winner === 1 && victoryRef.current) {
+          victoryRef.current.volume = 0.1;
           victoryRef.current.currentTime = 0;
           victoryRef.current.play();
-        } else if (newWinner === 2 && defeatRef.current) {
+        } else if (result.winner === 2 && defeatRef.current) {
+          defeatRef.current.volume= 0.3;
           defeatRef.current.currentTime = 0;
           defeatRef.current.play();
         }
       } else if (gameMode === 'ONLINE') {
-        // newWinner === myPlayerNumber means I won
-        if (newWinner === myPlayerNumber && victoryRef.current) {
+        // result.winner === myPlayerNumber means I won
+        if (result.winner === myPlayerNumber && victoryRef.current) {
+          victoryRef.current.volume = 0.1;
           victoryRef.current.currentTime = 0;
           victoryRef.current.play();
-        } else if (newWinner !== myPlayerNumber && defeatRef.current) {
+        } else if (result.winner !== myPlayerNumber && defeatRef.current) {
+          defeatRef.current.volume= 0.3;
           defeatRef.current.currentTime = 0;
           defeatRef.current.play();
         }
       } else {
         // LOCAL play (Human vs Human on same device)
         if (victoryRef.current) {
+          victoryRef.current.volume = 0.1;
           victoryRef.current.currentTime = 0;
           victoryRef.current.play();
         }
@@ -171,10 +180,6 @@ function App() {
         setCurrentPlayer(next);
       }
     }
-  
-    if (gameMode === 'AI' && player === 1) {
-      setLastAIMove(null);
-    }
   };  
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -187,8 +192,7 @@ function App() {
     };
   
     AI[aiDifficulty](board, (col) => {
-      const row = findAvailableRow(board, col);
-      setLastAIMove({ row, col });
+      //const row = findAvailableRow(board, col);
       handleClick(col);
     });
   }, [aiDifficulty, board]);
@@ -365,8 +369,9 @@ useEffect(() => {
     setGameMode(null); // This kicks back to the menu
     setShowConfetti(false);
     setRecycleConfetti(true);
-    setLastAIMove(null);
+    setLastMove(null);
     setMyPlayerNumber(null);
+    setWinningCells(null);
   };
   const resetToMenu = () => { 
     if (gameMode === 'ONLINE') {
@@ -426,7 +431,9 @@ useEffect(() => {
           handleClick={handleClick}
           gameMode={gameMode}
           currentPlayer={currentPlayer}
-          lastAIMove={lastAIMove}
+          lastMove={lastMove}
+          winningCells={winningCells}
+          winner={winner} 
         />
         <div className="button-group">
         <button className="reset-button" onClick={handleRematch} disabled={!winner} title={!winner ? "Can only rematch once there's a winner!" : ""}>Rematch</button>

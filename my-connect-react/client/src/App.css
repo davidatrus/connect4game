@@ -50,6 +50,30 @@ h1 {
   transition: transform 0.2s, background-color 0.3s;
   cursor: pointer;
 }
+.cell.player1.winning-cell {
+  animation: subtle-blink 1.25s infinite ease-in-out;
+  filter: brightness(1.15);
+  box-shadow: 0 0 8px 3px rgba(139, 0, 0, 0.6); /* softer dark red glow */
+}
+
+.cell.player2.winning-cell {
+  animation: subtle-blink 1.25s infinite ease-in-out;
+  filter: brightness(1.15);
+  box-shadow: 0 0 8px 3px rgba(184, 134, 11, 0.6); /* softer golden glow */
+}
+
+@keyframes subtle-blink {
+  0%, 100% {
+    transform: scale(1);
+    filter: brightness(1.1);
+  }
+  50% {
+    transform: scale(1.05);
+    filter: brightness(1.25);
+  }
+}
+
+
 
 .cell:hover {
   transform: scale(1.1);
@@ -155,8 +179,18 @@ select {
 }
 
 .last-move {
-  box-shadow: 0 0 10px 3px gold;
-  transform: scale(1.1);
+  box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.85);
+  animation: pulseLastMove 1s infinite ease-in-out;
+}
+@keyframes pulseLastMove {
+  0%, 100% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.7;
+  }
 }
 
 .menu-container {
@@ -475,17 +509,31 @@ select {
   align-items: center;
   margin-bottom: 10px;
 }
-.refresh-button {
-  background-color: #00bcd4;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 10px;
+.auto-refresh-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 0.9rem;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
+  color: #b0ffb0;
+  margin-bottom: 10px;
 }
 
-.refresh-button:hover {
-  background-color: #0194a3;
+.auto-refresh-indicator .dot {
+  width: 10px;
+  height: 10px;
+  background-color: #28a745;
+  border-radius: 50%;
+  animation: pulseGlow 1.5s infinite ease-in-out;
+  box-shadow: 0 0 5px #28a745;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.6;
+  }
 }

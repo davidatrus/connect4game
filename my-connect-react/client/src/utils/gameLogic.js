@@ -10,7 +10,10 @@ export const createBoard = (rows = 6, cols = 7) =>
   
   export const checkWinner = (board) => {
     const directions = [
-      [0, 1], [1, 0], [1, 1], [1, -1]
+      [0, 1],   // horizontal →
+      [1, 0],   // vertical ↓
+      [1, 1],   // diagonal ↘
+      [1, -1]   // diagonal ↙
     ];
     const rows = board.length;
     const cols = board[0].length;
@@ -21,21 +24,30 @@ export const createBoard = (rows = 6, cols = 7) =>
         if (!player) continue;
   
         for (let [dx, dy] of directions) {
-          let count = 1;
-          let r = row + dx, c = col + dy;
-          while (
-            r >= 0 && r < rows &&
-            c >= 0 && c < cols &&
-            board[r][c] === player
-          ) {
-            count++;
-            if (count === 4) return player;
-            r += dx;
-            c += dy;
+          const cells = [[row, col]];
+  
+          for (let i = 1; i < 4; i++) {
+            const r = row + dx * i;
+            const c = col + dy * i;
+  
+            if (
+              r < 0 || r >= rows ||
+              c < 0 || c >= cols ||
+              board[r][c] !== player
+            ) {
+              break;
+            }
+  
+            cells.push([r, c]);
+          }
+  
+          if (cells.length === 4) {
+            return { winner: player, cells };
           }
         }
       }
     }
+  
     return null;
   };
   
