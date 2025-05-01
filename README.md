@@ -10,7 +10,35 @@ _(Previously on Netlify — now hosted on Render with a full backend server)_
 
 ---
 
-### 🌐 0. NEW: Online Multiplayer Mode 🎮
+### 🌐 0. NEW: Spectate Online Public Games 👁️
+-  Browse and spectate active public games in real time
+- Watch games live without participating or disrupting play
+
+✅ **Changes:**
+- Added full **Spectator Mode** for online public games:
+  - Dedicated Spectator UI showing Players and Spectators
+  - Smooth transition between spectating and playing
+  - New modals for "Spectate Another Game" and "Play Your Own Game"
+  - Smart handling of spectator disconnections and room closures
+  - Fixed '(You)' label bugs  and name collision issues
+  - Improved display name persistence and state cleanup for spectators
+
+📌 **Files Affected:**
+- `App.js`
+- `GameMenu.js`
+- `OnlineMenu.js`
+- `server.js`
+- `useSocketListeners.js`
+- `EnterNameScreen.js`
+- `gameReset.js`
+
+💡 **Why:**  
+To make online play more dynamic and engaging. Even if you aren't competing, you can still watch the action live!
+
+---
+
+
+### 🌐 1. Online Multiplayer Mode 🎮
 ✅ **Changes:**
 - Added full **online multiplayer support**:
   - Create or join a private room via code
@@ -30,23 +58,16 @@ To turn the game into a social, real-time experience. Challenge your friends or 
 
 ---
 
-### 🧠 1. Game Modes Feature
+### 🧠 2. Game Modes Feature
 ✅ **Changes:**
 - Added a game mode menu with three options:
   - 🧑‍🤝‍🧑 Local Play vs Human
   - 🤖 Play vs AI
   - 🌐 Play Online
 
-📌 **Files Affected:**
-- `App.js`
-- `GameMenu.js`
-
-💡 **Why:**
-To support every kind of player: solo, local, and online.
-
 ---
 
-### 🤖 2. AI Difficulty Options
+### 🤖 3. AI Difficulty Options
 ✅ **Changes:**
 - Four levels: Easy, Medium, Hard, Impossible
 - Logic scales from random to perfect Minimax + Alpha-Beta play
@@ -59,7 +80,7 @@ To showcase AI design and make the game engaging at all skill levels.
 
 ---
 
-### ✨ 3. Winner UI & Confetti
+### ✨ 4. Winner UI & Confetti
 ✅ **Changes:**
 - `WinnerBanner.js`
 - Confetti triggered only when a player wins (using `react-confetti`)
@@ -67,55 +88,21 @@ To showcase AI design and make the game engaging at all skill levels.
 
 ---
 
-### 🎨 4. UI/UX Polish
-✅ Animated tokens, glowing title, button hovers, `Poppins` font, polished layout, and mobile support.
+### 🎨 5. Visual and Audio Polish
+- 🎨 Clean, responsive UI
+- 🔊 Sound effects: victory, defeat, move clinks
+- 🎆 Confetti win animation
+- 🕹️ Player labels and real-time game state
 
 ---
 
-### 🧼 5. Refactor & Modularization
-✅ Organized the codebase into `/components`, `/hooks`, `/utils`
-
----
-
-### 🐛 6. Bug Fixes
-✅ **Changes:**
-- Resolved a number of key multiplayer bugs:
-  - Fixed bug where both online players had the same name
-  - Fixed room state not cleaning up properly after host/guest disconnection
-  - Fixed bug where name from previous match would persist incorrectly
-  - Fixed rematch bugs across all modes (AI, Local, Online)
-- AI Rematch Flow:
-  - Added prompt to allow player to **keep the same AI difficulty** or **change to a different one** on rematch
-  - Disabled selecting the same level again during difficulty selection
-- General:
-  - Prevented confetti from appearing on load
-  - Correctly highlighted last move for AI
-  - Resolved casing mismatches and React hook dependency warnings
-
----
-
-### 🚀 7. Impossible AI (Perfect Play Mode)
+### 🚀 6. Impossible AI (Perfect Play Mode)
 ✅ Uses full Minimax + Alpha-Beta pruning with dynamic depth and evaluation scoring
 
 ---
 
-### 💡 8. Fun Facts + Developer Touches
-✅ Rotating trivia card, subtle transitions, and little touches throughout
 
----
-
-### 🔧 9. Deployment & Hosting (NEW)
-✅ Switched from Netlify (frontend-only) to **Render** for full backend support:
-- Socket.IO server now lives in the same Render service as the React frontend
-- Simplified environment, no CORS hacks or proxies
-- Single deploy pipeline
-
-💡 **Why the switch?**
-To support real-time multiplayer, you need a persistent Node.js server — Render made full-stack deployment seamless.
-
----
-
-### 🔊 10. Sound Effects Integration
+### 🔊 7. Sound Effects Integration
 ✅ **Changes:**
 - Added custom audio to enhance feedback and immersion:
   - ✅ Victory & Defeat chimes
@@ -123,57 +110,37 @@ To support real-time multiplayer, you need a persistent Node.js server — Rende
   - ✅ Countdown ticking sound before rematch
   - ✅ Disconnect alert sound when opponent leaves
 
-📌 **Files Affected:**
-- `App.js`, `WinnerBanner.js`, and sound utility logic
-
 ---
 
 ### 🗂 Folder Structure (Simplified)
 ```
 /client         ← React frontend (builds to /client/build)
 /server.js      ← Express + Socket.IO backend
-/components     ← UI pieces (Board, Menu, WinnerBanner)
-/hooks          ← Custom hooks (AI logic)
-/utils          ← Utility functions (checkWinner, etc.)
+/components     ← UI pieces (Board, Menu, WinnerBanner,OnlineMenu,EnterNameScreen)
+/hooks          ← Custom hooks (AI logic,FunFacts,SocketListeners)
+/utils          ← Utility functions (checkWinner, gameReset, gameLogic, etc)
 ```
 
 ---
 
-### 📌 Current Version: `v2.0.1`  
+### 📌 Current Version: `v3.0.0`  
 - `v1.x`: AI-focused single-player release  
-- `v2.0`: Online Multiplayer + Render Hosting
+- `v2.x`: Online Multiplayer + Render Hosting  
+- `v3.0`: Spectate Mode for Public Online Games 🎥
+
 ---
 
-### 🛠 April 23rd Patch Notes — Quality of Life & Bug Fix Roundup
+### 🛠Latest Patch — April 29, 2025 - Spectator Mode Now Live
 
-✅ **Changes & Improvements:**
+> 📄 Full changelog in [`/PATCH_NOTES.md`](./PATCH_NOTES.md)
 
-- 🎵 **Victory & Defeat Sound Tweaks**  
-  - Lowered volume of victory/defeat sounds to improve user experience across devices.
+✅ Highlights:
+- Spectator Mode
+- Countdown sound fix
+- Highlight Winning Moves
+- New Game board legend for player and spectator
+- Name modal refinements
+- Room cleanup improvements
+- ESLint and UI bugs fixed
 
-- 🧹 **Online Room Cleanup Reliability**  
-  - Fixed issue where public game rooms weren't being cleaned up when a host returned to the main menu.
-  - Improved socket `leaveRoom` and `disconnect` logic for proper lobby list updates.
-
-- 🎯 **Last Move Highlighting (Now for Everyone)**  
-  - Extended last-move highlight to support **both players** (not just AI).
-  - Automatically disables highlight when a winner is declared.
-
-- 🏆 **Winning Line Visuals**
-  - Game now visually highlights **all four winning cells** using blinking animation and colored glow (red or goldenrod based on player).
-  - Fully integrated with `checkWinner` logic which now returns both the winner and the winning cell coordinates.
-
-- 🎨 **UI & CSS Enhancements**
-  - Refined `winning-cell` styling for clarity: smoother blink, added soft glow, subtle scale pop.
-  - Fixed animation clash between `last-move` and `winning-cell`.
-
-- 🔄 **Auto-Refreshing Lobby Indicator**
-  - Removed manual "Refresh" button from the Public Game Lobby.
-  - Replaced with a dynamic “🟢 Auto-refreshing” status icon and pulsing dot to signal live updates.
-
-✅ **Files Touched:**
-- `App.js`, `Board.js`, `Cell.js`, `gameLogic.js`, `useAI.js`, `GameMenu.js`, `server.js`
-- CSS: `.winning-cell`, `.last-move`, `@keyframes`, and added `.auto-refresh-indicator`
-
-💡 **Why?**  
-To elevate visual clarity, game feedback, and reliability; especially for online play and AI challenge integrity.
+---

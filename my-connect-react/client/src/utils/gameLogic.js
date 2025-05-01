@@ -1,7 +1,4 @@
-export const createBoard = (rows = 6, cols = 7) =>
-    Array(rows).fill(null).map(() => Array(cols).fill(null));
-  
-  export const findAvailableRow = (board, col) => {
+    export const findAvailableRow = (board, col) => {
     for (let row = board.length - 1; row >= 0; row--) {
       if (board[row][col] === null) return row;
     }
