@@ -1,135 +1,122 @@
-// GameMenu.js — updated with public/private game options
+// src/components/GameMenu.js
 import React, { useState, useEffect } from 'react';
-import  socket  from '../socket'; 
+import EnterNameScreen from './EnterNameScreen';
+import OnlineMenu from './OnlineMenu';
+import { useFunFacts } from '../hooks/useFunFacts';
 
-const GameMenu = ({ setGameMode, setAIDifficulty, setDisplayName, setGameCode, setIsHost}) => {
+const GameMenu = ({
+  setGameMode,
+  setAIDifficulty,
+  setDisplayName,
+  displayName,
+  setGameCode,
+  setIsHost,
+  menuScreen,
+  setMenuScreen,
+  clearPreRoomState,
+  hasSetDisplayNameRef,
+}) => {
   const [isAISelected, setIsAISelected] = useState(false);
   const [selectedDifficulty, setSelectedDifficulty] = useState('easy');
-  const [factIndex, setFactIndex] = useState(0);
   const [isHumanModeChosen, setIsHumanModeChosen] = useState(false);
   const [isOnlineModeChosen, setIsOnlineModeChosen] = useState(false);
-  const [displayName, setLocalDisplayName] = useState('');
-  const [onlineStep, setOnlineStep] = useState('name');
-  const [gameCode, setLocalGameCode] = useState('');
-  const [gameCodeInput, setGameCodeInput] = useState('');
-  const [isHostingPublic, setIsHostingPublic] = useState(null);
-  const [isJoiningPublic, setIsJoiningPublic] = useState(null);
-  const [publicGames, setPublicGames] = useState([]);
-  const [selectedGameCode, setSelectedGameCode] = useState(null);
-  const shouldShowTagline = !['hostPublicOrPrivate', 'joinPublicOrPrivate', 'host', 'publicList'].includes(onlineStep);
-  const shouldShowBackButton = 
-  isAISelected || isHumanModeChosen || isOnlineModeChosen;
+  const [showChangeNameModal, setShowChangeNameModal] = useState(false);
+  const [nextMenuAfterModal, setNextMenuAfterModal] = useState(null);
 
-  const facts = [
-    "Connect 4 is a solved game — the first player can always win with perfect play.",
-    "The game was first solved by James Dow Allen on October 1, 1988",
-    "There are over 4 trillion possible game board combinations.",
-    "Try to control the center column — it gives you the most winning paths.",
-    "This app includes 4 AI levels, including a Minimax-based 'Impossible' mode.",
-    "Always look for diagonal threats — many players miss them until it's too late!",
-    "The longest possible game (without a win) has 42 moves — the board completely full.",
-    "The 'Impossible' AI uses alpha-beta pruning to reduce search time while still playing optimally.",
-    "The Hard AI uses a simplified version of Minimax — tough, but beatable!",
-    "The Easy AI is great for beginners — it plays random valid moves.",
-    "Originally this was my first project using react, a very basic project, now it's a full-featured game I’m proud of!",
-    "All AI logic is written from scratch — no libraries used for decision-making.",
-    "The confetti effect was added using the 'react-confetti' package — just for the win!",
-    "Each game mode (Human vs. Human, vs. AI) is dynamically loaded and animated.",
-    "Adding difficulty-based AI was a great way to learn the Minimax algorithm!",
-    "A key development challenge was optimizing AI speed without sacrificing intelligence.",
-    "The board highlights the last AI move — a small UX detail that improves playability.",
-    "Connect 4 is a great intro to game theory, algorithms, and front-end design.",
-    "Poppins font and animated tokens were added to give this project a polished, fun feel!",
-    "Yes, I lost to my own AI. Yes, I’m okay with it. (No, I’m not).",
-    "Pro tip: Rage-clicking the board won't help. I tried.",
-    "Behind every AI move, there's a for-loop silently judging you.",
-    "If this app breaks, just pretend it's a feature"
-  ];
-  const funFact = facts[factIndex];
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setFactIndex((prev) => (prev + 1) % facts.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [facts.length]);
 
-  useEffect(() => {
-    if (onlineStep === 'publicList') {
-      socket.emit('getPublicGames');
-    }
-  }, [onlineStep]);
+  const funFact = useFunFacts();
 
-  useEffect(() => {
-    const handleGamesList = (games) => {
-      console.log("📥 Received public games list", games);
-      setPublicGames(games);
-    };
+  const shouldShowTagline = (
+    (menuScreen === null) || 
+    (menuScreen === 'localOrOnline') || 
+    (menuScreen === 'hostjoin')
+  );
+  const showBackButton = (
+    (isHumanModeChosen && !isOnlineModeChosen && menuScreen === 'localOrOnline') ||
+    (isAISelected && menuScreen === null)
+  );
+
+  const handleBack = () => {
+    console.log('📦 handleBack triggered');
+    console.log('Before Back — menuScreen:', menuScreen);
   
-    socket.on('publicGamesList', handleGamesList);
-    return () => socket.off('publicGamesList', handleGamesList);
-  }, []);
+    if (menuScreen === 'hostjoin') {
+      console.log('🛑 Showing Change Name Modal');
+      setShowChangeNameModal(true);
+      setNextMenuAfterModal(null); // Will send user to Main Menu if they click "No"
+    } else if (menuScreen === 'hostPublicOrPrivate') {
+      console.log('🔙 Going back from Host Public/Private to Host/Join/Spectate');
+      setMenuScreen('hostjoin');
+    } else if (menuScreen === 'joinPublicOrPrivate') {
+      console.log('🔙 Going back from Join Public/Private to Host/Join/Spectate');
+      setMenuScreen('hostjoin');
+    } else if (menuScreen === 'spectateList') {
+      console.log('🔙 Going back from Spectate List to Host/Join/Spectate');
+      setMenuScreen('hostjoin');
+    } else if (menuScreen === 'host') {
+      console.log('🔙 Going back from Host to Host Public/Private');
+      setMenuScreen('hostPublicOrPrivate');
+    } else if (menuScreen === 'join' || menuScreen === 'publicList') {
+      console.log('🔙 Going back from Join to Join Public/Private');
+      setMenuScreen('joinPublicOrPrivate');
+    } else if (isAISelected && menuScreen === null) {
+      console.log('🧠 AI mode: back to AI difficulty select');
+      setIsAISelected(false);
+    } else if (menuScreen === 'localOrOnline') {
+      console.log('🔙 Going back to Top-Level Main Menu');
+      setMenuScreen(null);
+      setIsHumanModeChosen(false);
+      setIsOnlineModeChosen(false);
+    } else {
+      console.log('❓ Unexpected Back — fallback to Main Menu');
+      setMenuScreen(null);
+      setIsHumanModeChosen(false);
+      setIsOnlineModeChosen(false);
+    }    
+  };
   
+
 
   const handleDifficultyChange = (e) => {
-    const difficulty = e.target.value;
-    setSelectedDifficulty(difficulty);
-    setAIDifficulty(difficulty);
-  };
-
-  const handleOnlineSelect = (hostMode) => {
-    if (hostMode) {
-      const code = generateGameCode();
-      setLocalGameCode(code);
-      setGameCode(code);
-      setOnlineStep('hostPublicOrPrivate');
-    } else {
-      setOnlineStep('joinPublicOrPrivate');
-    }
-  };
-
-  const generateGameCode = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  };
-  const handleBack = () => {
-    if (isAISelected) {
-      setIsAISelected(false);
-    } else if (isHumanModeChosen && !isOnlineModeChosen) {
-      setIsHumanModeChosen(false);
-    } else if (isOnlineModeChosen && onlineStep === 'name') {
-      setIsOnlineModeChosen(false);
-    } else if (onlineStep === 'hostjoin') {
-      setOnlineStep('name');
-    } else if (onlineStep === 'hostPublicOrPrivate' || onlineStep === 'joinPublicOrPrivate') {
-      setOnlineStep('hostjoin');
-    } else if (onlineStep === 'host') {
-      setOnlineStep('hostPublicOrPrivate');
-    } else if (onlineStep === 'join') {
-      setOnlineStep('joinPublicOrPrivate');
-    } else if (onlineStep === 'publicList') {
-      setOnlineStep('joinPublicOrPrivate');
-    }
-  };
-  
-  
-
-  const startOnlineGame = ({ isHost, code, isPublic = false }) => {
-    socket.emit(isHost ? 'createRoom' : 'joinRoom', {
-      roomCode: code,
-      name: displayName,
-      isPublic
-    });
-    setDisplayName(displayName);
-    setGameCode(code);
-    setIsHost(isHost);
-    setGameMode('ONLINE');
+    setSelectedDifficulty(e.target.value);
+    setAIDifficulty(e.target.value);
   };
 
   const handleStartAIGame = () => {
     setAIDifficulty(selectedDifficulty);
     setGameMode('AI');
   };
+
+  useEffect(() => {
+    console.log('🔥 menuScreen changed:', menuScreen);
+
+    if (menuScreen === 'hostjoin' || menuScreen === 'spectateList' || menuScreen === 'hostPublicOrPrivate' || menuScreen === 'joinPublicOrPrivate') {
+      setIsHumanModeChosen(true);
+      setIsOnlineModeChosen(true);
+    } else if (menuScreen === 'resetName') {
+      setIsHumanModeChosen(true);
+      setIsOnlineModeChosen(true);
+    } else if (menuScreen === 'localOrOnline') {
+      setIsHumanModeChosen(true);
+      setIsOnlineModeChosen(false);
+    } else if (menuScreen === null) {
+      setIsHumanModeChosen(false);
+      setIsOnlineModeChosen(false);
+    }
+  }, [menuScreen]);
+
+  if (isOnlineModeChosen && menuScreen === 'resetName') {
+    return (
+      <EnterNameScreen
+        setDisplayName={setDisplayName}
+        setMenuScreen={setMenuScreen}
+        setIsOnlineModeChosen={setIsOnlineModeChosen}
+        setIsHumanModeChosen={setIsHumanModeChosen}
+        hasSetDisplayNameRef={hasSetDisplayNameRef}
+      />
+    );
+  }
 
   return (
     <div className="menu-container">
@@ -139,150 +126,87 @@ const GameMenu = ({ setGameMode, setAIDifficulty, setDisplayName, setGameCode, s
           <span role="img" aria-label="Yellow" className="token">🟡</span>
         </div>
         <h2 className="slide-title">Connect 4</h2>
-        {shouldShowBackButton && (
-          <button className="back-button" onClick={handleBack}>
+
+        {showBackButton && (
+          <button
+            className="back-button"
+            onClick={() => {
+              // Special intercept
+              if (menuScreen === 'hostjoin') {
+                console.log('📦 Intercepted Back from HostJoin -> showing Change Name Modal');
+                setShowChangeNameModal(true);
+                setNextMenuAfterModal('localOrOnline');
+              } else {
+                console.log('📦 NORMAL handleBack triggered');
+                handleBack();
+              }
+            }}
+          >
             ⬅ Back
           </button>
         )}
-        {shouldShowTagline && ( 
-          <> 
-        <p className="tagline"><em>Challenge a friend or face the smartest AI</em></p>
-        <p className="tagline">Select a mode to start playing</p>
-        </>
+
+
+
+
+        {shouldShowTagline && (
+          <>
+            <p className="tagline"><em>Challenge a friend or face the smartest AI</em></p>
+            <p className="tagline">Select a mode to start playing</p>
+          </>
         )}
+
+        {/* PLAY VS HUMAN / AI SELECTION */}
         {!isHumanModeChosen && !isOnlineModeChosen && !isAISelected && (
           <>
-            <button onClick={() => setIsHumanModeChosen(true)}>Play vs Human</button>
-            <button onClick={() => setIsAISelected(true)}>Play vs Computer</button>
-          </>
-        )}
-
-        {isHumanModeChosen && !isOnlineModeChosen && (
-          <>
-            <button onClick={() => setGameMode('HUMAN')}>Play Locally</button>
             <button onClick={() => {
-              setIsOnlineModeChosen(true);
-              setOnlineStep('name');
-            }}>Play Online</button>
+              setIsHumanModeChosen(true);
+              setMenuScreen('localOrOnline');
+              console.log('👤 Clicked Play vs Human — showing Local/Online screen.');
+            }}>
+              Play vs Human
+            </button>
+            <button onClick={() => setIsAISelected(true)}>
+              Play vs Computer
+            </button>
           </>
         )}
 
-        {isOnlineModeChosen && (
+        {/* LOCAL / ONLINE SELECTION */}
+        {menuScreen === 'localOrOnline' && (
           <>
-            {onlineStep === 'name' && (
-              <>
-                <input
-                  type="text"
-                  placeholder="Enter Display Name"
-                  value={displayName}
-                  onChange={(e) => setLocalDisplayName(e.target.value)}
-                  className="input-display-name"
-                />
-                <button
-                  onClick={() => {
-                    if (displayName.trim()) {
-                      setOnlineStep('hostjoin');
-                    }
-                  }}
-                >
-                  Continue
-                </button>
-              </>
-            )}
-
-            {onlineStep === 'hostjoin' && (
-              <div className="button-row">
-                <button onClick={() => handleOnlineSelect(true)}>Host Game</button>
-                <button onClick={() => handleOnlineSelect(false)}>Join Game</button>
-              </div>
-            )}
-
-            {onlineStep === 'hostPublicOrPrivate' && (
-              <>
-                <p>Would you like to host a public or private game?</p>
-                <button onClick={() => { setIsHostingPublic(true); setOnlineStep('host'); }}>Public Game</button>
-                <button onClick={() => { setIsHostingPublic(false); setOnlineStep('host'); }}>Private Game</button>
-              </>
-            )}
-
-            {onlineStep === 'host' && (
-              <>
-                {isHostingPublic === false && (
-                  <>
-                    <p className="game-code-display">🎉 Share this code with a friend:</p>
-                    <h3 className="game-code">{gameCode}</h3>
-                  </>
-                )}
-                <button onClick={() => startOnlineGame({ isHost: true, code: gameCode, isPublic: isHostingPublic })}>Start Game</button>
-              </>
-            )}
-
-            {onlineStep === 'joinPublicOrPrivate' && (
-              <>
-                <p>How would you like to join a game?</p>
-                <button onClick={() => { setIsJoiningPublic(true); setOnlineStep('publicList'); }}>Find Public Game</button>
-                <button onClick={() => { setIsJoiningPublic(false); setOnlineStep('join'); }}>Enter Game Code</button>
-              </>
-            )}
-
-            {onlineStep === 'join' && (
-              <>
-                <input
-                  type="text"
-                  placeholder="Enter Game Code"
-                  value={gameCodeInput}
-                  onChange={(e) => setGameCodeInput(e.target.value.toUpperCase())}
-                  className="input-game-code"
-                  maxLength={6}
-                />
-                <button
-                  onClick={() => {
-                    if (gameCodeInput.trim().length === 6) {
-                      startOnlineGame({ isHost: false, code: gameCodeInput });
-                    } else {
-                      alert('Please enter a valid 6-character game code.');
-                    }
-                  }}
-                >
-                  Join Game
-                </button>
-              </>
-            )}
-
-            {onlineStep === 'publicList' && (
-              <>
-                <h3>Select a Public Game:</h3>
-                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '8px' }}>
-  <div className="auto-refresh-indicator" title="Public game list updates in real-time.">
-  <div className="dot" /> Auto-refreshing
-  </div>
-</div>
-
-                <ul className="public-game-list">
-                {publicGames.length === 0 && <li className="public-game-item empty">No public games available.</li>}
-      {publicGames.map((game) => (
-        <li
-          key={game.roomCode}
-          className={`public-game-item ${selectedGameCode === game.roomCode ? 'selected' : ''}`}
-          onClick={() => setSelectedGameCode(game.roomCode)}
-        >
-          <span className="custom-radio">
-            <span className="inner-dot" />
-          </span>
-          <span className="game-label">{game.hostName}'s Public Game</span>
-        </li>
-      ))}</ul>
-    <button
-      disabled={!selectedGameCode}
-      onClick={() => startOnlineGame({ isHost: false, code: selectedGameCode })}
-    >
-      Join Selected Game
-    </button>
-  </>
-)}
+            <button onClick={() => {
+              setGameMode('HUMAN');
+            }}>
+              Play Locally
+            </button>
+            <button onClick={() => {
+              console.log('🌐 Play Online selected');
+              setMenuScreen('resetName');
+            }}>
+              Play Online
+            </button>
           </>
         )}
 
+
+        {/* 👥 HOST / JOIN / SPECTATE */}
+        {!showChangeNameModal && (menuScreen === 'hostjoin' || menuScreen === 'hostPublicOrPrivate' || menuScreen === 'joinPublicOrPrivate' || menuScreen === 'host' || menuScreen === 'join' || menuScreen === 'spectateList' || menuScreen === 'publicList') && (
+          <OnlineMenu
+            displayName={displayName}
+            setDisplayName={setDisplayName}
+            setGameMode={setGameMode}
+            setGameCode={setGameCode}
+            setIsHost={setIsHost}
+            setMenuScreen={setMenuScreen}
+            menuScreen={menuScreen}
+            parentHandleBack={handleBack}
+            clearPreRoomState={clearPreRoomState} 
+          />
+        )}
+
+
+        {/* AI Difficulty Selection */}
         {isAISelected && (
           <div className="difficulty-select">
             <label htmlFor="difficulty">AI Difficulty:</label>
@@ -296,10 +220,40 @@ const GameMenu = ({ setGameMode, setAIDifficulty, setDisplayName, setGameCode, s
             <button onClick={handleStartAIGame}>Start Game</button>
           </div>
         )}
-
       </div>
-      <div className="fact-card" key={factIndex}>
-        <p> {funFact} </p>
+      {showChangeNameModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Would you like to update your display name?</h3>
+            <div className="modal-buttons">
+              <button
+                onClick={() => {
+                  setMenuScreen('resetName');
+                  setShowChangeNameModal(false);
+                }}
+              >
+                Yes, Update Name
+              </button>
+              <button
+                onClick={() => {
+                  // Send them all the way back to Main Menu
+                  setMenuScreen(null);
+                  setIsHumanModeChosen(false);
+                  setIsOnlineModeChosen(false);
+                  setShowChangeNameModal(false);
+                }}
+              >
+                No, Return to Main Menu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
+      <div className="fact-card">
+        <p>{funFact}</p>
       </div>
     </div>
   );

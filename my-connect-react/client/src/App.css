@@ -127,16 +127,18 @@ select {
 }
 
 .winner-banner {
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 600;
   color: #fff;
   background-color: #28a745;
-  padding: 15px 25px;
+  padding: 10px 20px;
   border-radius: 8px;
   text-align: center;
-  margin: 20px auto;
-  width: fit-content;
+  margin: 1rem auto;
+  width: max-content;
+  max-width: 90%;
   animation: pulse 1s ease-in-out infinite alternate;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 @keyframes pulse {
@@ -537,3 +539,205 @@ select {
     opacity: 0.6;
   }
 }
+.player-container {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background-color: #0c2a45;
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+  z-index: 5;
+  max-width: 250px;
+}
+
+.player-title {
+  font-weight: bold;
+  color: #fff;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.player-title .gamepad-icon {
+  margin-right: 6px;
+}
+
+
+.player-pill-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.player-pill {
+  color: #111;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.red-pill {
+  background-color: red;
+}
+
+.yellow-pill {
+  background-color: gold;
+}
+
+/* Spectator container styles (unchanged if already applied) */
+.spectator-container {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background-color: #0c2a45;
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+  transition: width 0.3s ease, padding 0.3s ease;
+  z-index: 5;
+  width: 130px; /* Enough for 👁 Spectators (N) + dot */
+  overflow: hidden;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.spectator-container:hover {
+  width: auto;
+  max-width: 260px;        
+  padding-right: 16px;
+}
+.spectator-title .pulse-dot {
+  width: 6px;
+  height: 6px;
+  background-color: #2cc3ff;
+  border-radius: 50%;
+  margin-left: 6px;
+  animation: pulse 1.5s infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.6);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+}
+/* Spectator pill list is hidden by default */
+.spectator-pill-container {
+  display: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  justify-content: space-between; 
+  width: 240px;
+  position: relative;
+}
+
+/* On hover, show the pills */
+.spectator-container:hover .spectator-pill-container {
+  display: flex;
+}
+
+/* Spectator title line (👁 + Spectators N) */
+.spectator-title {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  color: #fff;
+  font-size: 14px;
+}
+
+.spectator-title .eye-icon {
+  margin-right: 6px;
+}
+
+/* Each pill */
+.spectator-pill {
+  background-color: #2c3e50;
+  color: #fff;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+  width: 48%;
+  text-align: center;
+  box-sizing: border-box;
+}
+/* Center last spectator pill if it's alone in the row (for odd count) */
+.spectator-pill-container .spectator-pill:nth-last-child(1):nth-child(odd) {
+  margin-left: auto;
+  margin-right: auto;
+}
+.fullscreen-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100%;
+}
+.menu-title-top {
+  position: absolute;
+  top: 2rem;
+  text-align: center;
+  width: 100%;
+}
+
+.online-menu-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: 40px;
+}
+.enter-name-card {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 40px 50px;
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(5px);
+  text-align: center;
+  animation: fadeIn 0.8s ease-in-out both;
+  position: relative;
+}
+
+.enter-name-card input {
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 10px;
+  font-size: 1.1rem;
+  border-radius: 8px;
+  border: none;
+  width: 100%;
+  max-width: 300px;
+}
+
+.enter-name-card button {
+  margin-top: 1rem;
+  padding: 12px 24px;
+  font-size: 1.1em;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background-color: #00b4d8;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.enter-name-card button:hover {
+  background-color: #0096c7;
+  transform: scale(1.05);
+  box-shadow: 0 0 8px 2px rgba(0, 180, 216, 0.6);
+}
+
